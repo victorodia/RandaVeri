@@ -18,6 +18,7 @@ import re
 import unicodedata
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile, Form
+from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
