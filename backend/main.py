@@ -19,9 +19,11 @@ import unicodedata
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
-from jose import jwt
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from sqlalchemy import func, text
 
 load_dotenv()
 
