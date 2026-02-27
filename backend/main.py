@@ -24,6 +24,7 @@ from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from sqlalchemy import func, text
+from sqlalchemy.orm import Session
 
 load_dotenv()
 
