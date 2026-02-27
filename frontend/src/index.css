@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --premium-bg: #0D0F12;
+    --premium-surface: #1A1D23;
+    --premium-border: #2E343D;
+    --premium-primary: #3B82F6;
+    --premium-secondary: #64748B;
+    --premium-accent: #10B981;
+    --premium-text: #FFFFFF;
+    --premium-overlay: rgba(255, 255, 255, 0.05);
+    --status-blue: #93C5FD;
+    --status-emerald: #6EE7B7;
+    --status-purple: #D8B4FE;
+    --status-amber: #FCD34D;
+    --status-red: #FCA5A5;
+    --status-orange: #FDBA74;
+    --status-rose: #FDA4AF;
+    --status-indigo: #A5B4FC;
+    --status-teal: #5EEAD4;
+    --status-cyan: #67E8F9;
+  }
+
+  :root.light {
+    --premium-bg: #F1F5F9;
+    --premium-surface: #FFFFFF;
+    --premium-border: #CBD5E1;
+    --premium-primary: #1E40AF;
+    --premium-secondary: #475569;
+    --premium-accent: #047857;
+    --premium-text: #0F172A;
+    --premium-overlay: rgba(15, 23, 42, 0.05);
+    --status-blue: #1E40AF;
+    --status-emerald: #065F46;
+    --status-purple: #6B21A8;
+    --status-amber: #92400E;
+    --status-red: #991B1B;
+    --status-orange: #9A3412;
+    --status-rose: #9F1239;
+    --status-indigo: #3730A3;
+    --status-teal: #0F766E;
+    --status-cyan: #0E7490;
+  }
+}
+
+@theme {
+  --color-premium-bg: var(--premium-bg);
+  --color-premium-surface: var(--premium-surface);
+  --color-premium-border: var(--premium-border);
+  --color-premium-primary: var(--premium-primary);
+  --color-premium-secondary: var(--premium-secondary);
+  --color-premium-accent: var(--premium-accent);
+  --color-premium-text: var(--premium-text);
+  --color-premium-overlay: var(--premium-overlay);
+  --color-status-blue: var(--status-blue);
+  --color-status-emerald: var(--status-emerald);
+  --color-status-purple: var(--status-purple);
+  --color-status-amber: var(--status-amber);
+  --color-status-red: var(--status-red);
+  --color-status-orange: var(--status-orange);
+  --color-status-rose: var(--status-rose);
+  --color-status-indigo: var(--status-indigo);
+  --color-status-teal: var(--status-teal);
+  --color-status-cyan: var(--status-cyan);
+}
+
+@layer base {
+  body {
+    @apply bg-premium-bg text-premium-text font-['Bricolage_Grotesque'] antialiased transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-premium-surface/60 backdrop-blur-xl border border-premium-border rounded-2xl p-6 shadow-2xl hover:border-premium-primary/40 hover:shadow-premium-primary/5 transition-all duration-300;
+  }
+
+  :root:not(.light) .glass-card {
+    @apply bg-premium-surface/40 border-premium-border/10;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-premium-primary to-blue-600 hover:from-blue-600 hover:to-premium-primary text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-premium-primary/20 hover:shadow-premium-primary/40 hover:scale-[1.02] active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+  }
+
+  .input-field {
+    @apply bg-premium-surface border border-premium-border rounded-xl py-3 px-4 focus:outline-none focus:border-premium-primary focus:ring-1 focus:ring-premium-primary/50 transition-all duration-200 text-premium-text placeholder-premium-secondary;
+  }
+
+  .premium-gradient {
+    @apply bg-gradient-to-br from-premium-primary via-blue-600 to-indigo-700;
+  }
+
+  /* Scrollbar Polish */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-premium-bg;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-premium-border rounded-full hover:bg-premium-secondary;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  nav,
+  header,
+  aside,
+  button,
+  .sidebar,
+  #sidebar,
+  .no-print,
+  .glass-card:not(.printable) {
+    display: none !important;
+  }
+
+  .min-h-screen {
+    min-height: auto !important;
+  }
+
+  .flex-1 {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  #verification-slip {
+    display: block !important;
+    border: 2px solid #e5e7eb !important;
+    margin: 0 auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
