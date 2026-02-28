@@ -176,7 +176,6 @@ def bootstrap_orgs():
     except Exception as e:
         print(f"ERROR: Bootstrap failed: {e}")
 
-bootstrap_orgs()
 
 app = FastAPI(title="Randaframes API")
 
@@ -2386,6 +2385,8 @@ def topup_wallet(
         "balance": user.org.wallet.balance_units,
         "price_paid": total_price
     }
+
+bootstrap_orgs()
 
 if __name__ == "__main__":
     import uvicorn
