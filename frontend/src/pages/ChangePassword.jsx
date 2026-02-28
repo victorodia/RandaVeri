@@ -35,15 +35,13 @@ const ChangePassword = () => {
             setError("Password must be at least 6 characters long");
             return;
         }
-
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const formPayload = new FormData();
-            formPayload.append('current_password', formData.current_password);
-            formPayload.append('new_password', formData.new_password);
-
-            await axios.post(`${API_BASE_URL}/change-password`, formPayload, {
+            await axios.post(`${API_BASE_URL}/change-password`, {
+                current_password: formData.current_password,
+                new_password: formData.new_password
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
