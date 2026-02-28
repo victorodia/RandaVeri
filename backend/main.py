@@ -203,6 +203,10 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
+# Centralized URLs for Email Links
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "default_secret_key_change_me")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
@@ -450,7 +454,6 @@ def forgot_password(data: schemas.ForgotPasswordRequest, db: Session = Depends(g
     db.commit()
     
     # Send Real Email
-    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
     EmailService.send_reset_password_email(user.email, user.username, reset_link)
     
@@ -1062,7 +1065,6 @@ def register(data: schemas.RegisterUser, admin: User = Depends(get_current_admin
         db.commit()
 
         # Send Verification Email
-        FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
         v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
         EmailService.send_verification_email(new_user.email, new_user.username, v_link)
         
@@ -1331,7 +1333,6 @@ def create_org_user(data: dict, admin: User = Depends(get_current_user), db: Ses
         db.commit()
 
         # Send Verification Email
-        FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
         v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
         EmailService.send_verification_email(new_user.email, new_user.username, v_link)
         
@@ -1538,7 +1539,7 @@ def create_organisation(
             file_location = os.path.join(UPLOAD_DIR, safe_name)
             with open(file_location, "wb") as buffer:
                 shutil.copyfileobj(logo.file, buffer)
-            BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+            # Use centralized BACKEND_URL
             logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
         except Exception as e:
             print(f"File upload error: {e}")
@@ -1592,7 +1593,7 @@ def create_organisation(
             db.commit()
 
             # Send Verification Email
-            FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+            # Use centralized FRONTEND_URL
             v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
             with open("email_trace.log", "a") as log_file:
                 log_file.write(f"{datetime.utcnow()} - TRACE: Sending verification email to {new_user.email}...\n")
@@ -1673,7 +1674,7 @@ def update_organisation(
         file_location = os.path.join(UPLOAD_DIR, logo.filename)
         with open(file_location, "wb") as buffer:
             shutil.copyfileobj(logo.file, buffer)
-        BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+        # Use centralized BACKEND_URL
         org.logo_url = f"{BACKEND_URL}/uploads/{logo.filename}"
 
     # Handle Admin User Update
