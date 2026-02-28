@@ -2,4 +2,4 @@
 cmds = ["pip install -r requirements.txt"]
 
 [start]
-cmd = "gunicorn main:app -k uvicorn.workers.UvicornWorker"
+cmd = "gunicorn main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT"

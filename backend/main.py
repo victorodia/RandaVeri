@@ -441,8 +441,8 @@ def forgot_password(data: schemas.ForgotPasswordRequest, db: Session = Depends(g
     db.commit()
     
     # Send Real Email
-    port = 5174 if user.organisation_id == 1 else 5173
-    reset_link = f"http://localhost:{port}/reset-password?token={token}"
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
     EmailService.send_reset_password_email(user.email, user.username, reset_link)
     
     return {"message": "Reset link has been sent to your email address."}
@@ -1053,8 +1053,8 @@ def register(data: schemas.RegisterUser, admin: User = Depends(get_current_admin
         db.commit()
 
         # Send Verification Email
-        port = 5174 if new_user.organisation_id == 1 else 5173
-        v_link = f"http://localhost:{port}/verify-email?token={v_token}"
+        FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+        v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
         EmailService.send_verification_email(new_user.email, new_user.username, v_link)
         
         log_activity(db, admin, "USER_CREATION", {"created_user": data.username, "role": new_user.role})
@@ -1322,8 +1322,8 @@ def create_org_user(data: dict, admin: User = Depends(get_current_user), db: Ses
         db.commit()
 
         # Send Verification Email
-        port = 5174 if new_user.organisation_id == 1 else 5173
-        v_link = f"http://localhost:{port}/verify-email?token={v_token}"
+        FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+        v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
         EmailService.send_verification_email(new_user.email, new_user.username, v_link)
         
         log_activity(db, admin, "USER_CREATION", {"created_user": username, "role_id": role_id})
