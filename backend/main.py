@@ -180,7 +180,11 @@ bootstrap_orgs()
 app = FastAPI(title="Randaframes API")
 
 # Security: Restrict origins in production
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",")
+RAW_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
+if RAW_ORIGINS == "*":
+    ALLOWED_ORIGINS = ["*"]
+else:
+    ALLOWED_ORIGINS = [o.strip() for o in RAW_ORIGINS.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
@@ -1525,7 +1529,8 @@ def create_organisation(
             file_location = os.path.join(UPLOAD_DIR, safe_name)
             with open(file_location, "wb") as buffer:
                 shutil.copyfileobj(logo.file, buffer)
-            logo_url = f"http://localhost:8000/uploads/{safe_name}"
+            BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+            logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
         except Exception as e:
             print(f"File upload error: {e}")
             pass
@@ -1578,8 +1583,8 @@ def create_organisation(
             db.commit()
 
             # Send Verification Email
-            port = 5174 if new_user.organisation_id == 1 else 5173
-            v_link = f"http://localhost:{port}/verify-email?token={v_token}"
+            FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+            v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
             with open("email_trace.log", "a") as log_file:
                 log_file.write(f"{datetime.utcnow()} - TRACE: Sending verification email to {new_user.email}...\n")
                 email_result = EmailService.send_verification_email(new_user.email, new_user.username, v_link)
@@ -1659,7 +1664,8 @@ def update_organisation(
         file_location = os.path.join(UPLOAD_DIR, logo.filename)
         with open(file_location, "wb") as buffer:
             shutil.copyfileobj(logo.file, buffer)
-        org.logo_url = f"http://localhost:8000/uploads/{logo.filename}"
+        BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+        org.logo_url = f"{BACKEND_URL}/uploads/{logo.filename}"
 
     # Handle Admin User Update
     # Find the admin user for this org (loose match for "admin" or "org_admin" in role)
