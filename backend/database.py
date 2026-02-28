@@ -26,7 +26,7 @@ print(f"DATABASE: Using {'PostgreSQL' if SQLALCHEMY_DATABASE_URL.startswith('pos
 engine_args = {"check_same_thread": False, "timeout": 60} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, **engine_args
+    SQLALCHEMY_DATABASE_URL, connect_args=engine_args
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

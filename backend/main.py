@@ -1696,8 +1696,33 @@ def update_organisation(
     db.refresh(org)
     return org
 
-# Organisation deletion removed in favor of suspension as per user request.
-# Audit logs and operation logs will remain available for compliance.
+# Organisation deletion (Soft Delete)
+@app.delete("/admin/organisations/{org_id}")
+def delete_organisation(org_id: int, data: dict, admin: User = Depends(get_current_platform_user), db: Session = Depends(get_db)):
+    if not has_permission(admin, "DELETE_ORGANISATION"):
+        raise HTTPException(status_code=403, detail="Permission denied: DELETE_ORGANISATION required")
+    
+    password = data.get("password")
+    if not password or not verify_password(password, admin.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+
+    org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organisation not found")
+    
+    if org.slug == "default":
+        raise HTTPException(status_code=400, detail="Cannot delete the default organisation")
+
+    org.is_deleted = True
+    org.is_suspended = True
+    
+    # Cascade: Suspend all users in this organisation
+    db.query(User).filter(User.organisation_id == org.id).update({"is_active": False})
+    
+    db.commit()
+    
+    log_activity(db, admin, "ORGANISATION_DELETED", {"org_name": org.name, "org_id": org.id})
+    return {"message": f"Organisation '{org.name}' has been deleted."}
 
 
 @app.post("/admin/organisations/{org_id}/toggle-suspension")

@@ -177,7 +177,40 @@ const OrganisationsView = ({
         });
     };
 
-    // Organisation deletion removed in favor of suspension
+    const handleDeleteOrganisation = (org) => {
+        showDialog({
+            type: 'confirm',
+            title: `Delete Organisation`,
+            message: `Are you sure you want to permanently delete ${org.name}? This action cannot be undone. All users in this organisation will be suspended.`,
+            confirmText: `Delete Permanently`,
+            isPasswordRequired: true,
+            onConfirm: async (password) => {
+                if (!password) {
+                    showDialog({ type: 'error', title: 'Password Required', message: 'You must provide your administrator password to confirm this action.' });
+                    return;
+                }
+                try {
+                    const token = localStorage.getItem('token');
+                    const res = await axios.delete(`${API}/admin/organisations/${org.id}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                        data: { password }
+                    });
+                    showDialog({
+                        type: 'success',
+                        title: 'Organisation Deleted',
+                        message: res.data.message
+                    });
+                    fetchOrgs();
+                } catch (err) {
+                    showDialog({
+                        type: 'error',
+                        title: 'Deletion Failed',
+                        message: err.response?.data?.detail || "Action failed"
+                    });
+                }
+            }
+        });
+    };
 
     return (
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
@@ -238,6 +271,15 @@ const OrganisationsView = ({
                                         >
                                             {org.is_suspended ? <Play size={18} /> : <Pause size={18} />}
                                         </button>
+                                        {canDelete && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteOrganisation(org); }}
+                                                className="p-2 rounded-lg hover:bg-status-red/10 text-status-red"
+                                                title="Delete Organisation"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
                                     </>
                                 )}
                             </div>
