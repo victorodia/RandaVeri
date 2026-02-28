@@ -166,9 +166,10 @@ def bootstrap_orgs():
                 db.add(new_admin)
                 db.commit()
                 
-                # Create Wallet for Admin
-                admin_wallet = Wallet(user_id=new_admin.id, balance_units=1000000)
-                db.add(admin_wallet)
+                # Create Wallet for Admin Org (if missing)
+                if not default_org.wallet:
+                    default_org.wallet = Wallet(organisation_id=default_org.id, balance_units=1000000)
+                    db.add(default_org.wallet)
                 db.commit()
 
         db.close()
@@ -298,7 +299,12 @@ def login(
             else:
                 user = candidates[0] if candidates else None
 
-        if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
+        if not user:
+            print(f"LOGIN FAILED: User '{form_data.username}' not found.")
+            raise HTTPException(status_code=401, detail="Incorrect username or password")
+            
+        if not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
+            print(f"LOGIN FAILED: Password mismatch for user '{form_data.username}'.")
             raise HTTPException(status_code=401, detail="Incorrect username or password")
 
         if not user.is_active:
