@@ -19,15 +19,17 @@ const VerifyEmail = () => {
             }
 
             try {
-                const formData = new FormData();
-                formData.append('token', token);
-                const res = await axios.post(API_BASE_URL + '/verify-email', formData);
+                const res = await axios.post(API_BASE_URL + '/verify-email', { token });
 
                 setStatus('success');
                 setMessage(res.data.message);
             } catch (err) {
                 setStatus('error');
-                setMessage(err.response?.data?.detail || 'Verification failed. The link might be expired or invalid.');
+                const errorDetail = err.response?.data?.detail;
+                const errorMessage = typeof errorDetail === 'string'
+                    ? errorDetail
+                    : (Array.isArray(errorDetail) ? errorDetail[0]?.msg : 'Verification failed. The link might be expired or invalid.');
+                setMessage(errorMessage);
             }
         };
 

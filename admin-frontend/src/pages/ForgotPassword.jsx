@@ -14,10 +14,7 @@ const ForgotPassword = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const formData = new FormData();
-            formData.append('email', email);
-
-            const res = await axios.post(`${API_BASE_URL}/forgot-password`, formData);
+            const res = await axios.post(`${API_BASE_URL}/forgot-password`, { email });
 
             showDialog({
                 type: 'success',

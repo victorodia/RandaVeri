@@ -64,17 +64,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     const forgotPassword = async (email) => {
-        const formData = new URLSearchParams();
-        formData.append('email', email);
-        const response = await axios.post(`${API_BASE_URL}/forgot-password`, formData);
+        const response = await axios.post(`${API_BASE_URL}/forgot-password`, { email });
         return response.data;
     };
 
     const resetPassword = async (token, newPassword) => {
-        const formData = new URLSearchParams();
-        formData.append('token', token);
-        formData.append('new_password', newPassword);
-        const response = await axios.post(`${API_BASE_URL}/reset-password`, formData);
+        const response = await axios.post(`${API_BASE_URL}/reset-password`, {
+            token: token,
+            new_password: newPassword
+        });
         return response.data;
     };
 

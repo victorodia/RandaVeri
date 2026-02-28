@@ -30,11 +30,10 @@ const ResetPassword = () => {
 
         setLoading(true);
         try {
-            const formData = new FormData();
-            formData.append('token', token);
-            formData.append('new_password', password);
-
-            await axios.post(API_BASE_URL + '/reset-password', formData);
+            await axios.post(API_BASE_URL + '/reset-password', {
+                token: token,
+                new_password: password
+            });
 
             setSuccess(true);
             showDialog({
