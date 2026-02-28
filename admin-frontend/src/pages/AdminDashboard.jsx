@@ -224,8 +224,8 @@ const AdminDashboard = () => {
             <div className="border-b border-premium-border bg-premium-surface/30 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-[1600px] mx-auto px-8 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-premium-primary/20 rounded-xl flex items-center justify-center text-premium-primary border border-premium-primary/30">
-                            <Shield size={24} />
+                        <div className="h-10 w-10 bg-premium-primary/10 rounded-xl overflow-hidden flex items-center justify-center border border-premium-primary/20">
+                            <img src="/logo.jpeg" alt="Logo" className="h-full w-full object-cover" />
                         </div>
                         <div>
                             <h1 className="text-xl font-bold tracking-tight">Randaframes <span className="text-premium-primary">Admin</span></h1>

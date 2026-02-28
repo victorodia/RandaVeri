@@ -36,8 +36,8 @@ const Login = () => {
         <div className="min-h-screen bg-premium-bg flex items-center justify-center p-4">
             <div className="max-w-md w-full glass-card space-y-8">
                 <div className="text-center">
-                    <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-premium-primary/20 text-premium-primary mb-4">
-                        <Shield size={32} />
+                    <div className="inline-flex items-center justify-center h-16 w-16 rounded-full overflow-hidden bg-premium-primary/10 mb-4 border border-premium-primary/20">
+                        <img src="/logo.jpeg" alt="Logo" className="h-full w-full object-cover" />
                     </div>
                     <h2 className="text-3xl font-bold tracking-tight">Admin Portal</h2>
                     <p className="text-premium-secondary mt-2">Control Center Management</p>
