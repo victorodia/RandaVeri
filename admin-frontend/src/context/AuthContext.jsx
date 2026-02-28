@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
         formData.append('username', username);
         formData.append('password', password);
 
-        const response = await axios.post('http://localhost:8000/login', formData);
+        const response = await axios.post(`${API_BASE_URL}/login`, formData);
         localStorage.setItem('token', response.data.access_token);
 
         // Fetch user profile and check platform access
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
             return null;
         }
         try {
-            const response = await axios.get('http://localhost:8000/me', {
+            const response = await axios.get(`${API_BASE_URL}/me`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUser(response.data);
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
 
         if (token) {
             try {
-                await axios.post('http://localhost:8000/logout', {}, {
+                await axios.post(`${API_BASE_URL}/logout`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (err) {

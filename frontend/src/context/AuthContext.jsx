@@ -16,14 +16,14 @@ export const AuthProvider = ({ children }) => {
             formData.append('org_slug', orgSlug);
         }
 
-        const response = await axios.post('http://localhost:8000/login', formData);
+        const response = await axios.post(`${API_BASE_URL}/login`, formData);
         localStorage.setItem('token', response.data.access_token);
         await fetchUser();
         return response.data;
     };
 
     const register = async (username, email, password) => {
-        await axios.post(`http://localhost:8000/register?username=${username}&email=${email}&password=${password}`);
+        await axios.post(`${API_BASE_URL}/register?username=${username}&email=${email}&password=${password}`);
         await login(username, password);
     };
 
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
             return;
         }
         try {
-            const response = await axios.get('http://localhost:8000/me', {
+            const response = await axios.get(`${API_BASE_URL}/me`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUser(response.data);
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
 
         if (token) {
             try {
-                await axios.post('http://localhost:8000/logout', {}, {
+                await axios.post(`${API_BASE_URL}/logout`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (err) {
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
     const forgotPassword = async (email) => {
         const formData = new URLSearchParams();
         formData.append('email', email);
-        const response = await axios.post('http://localhost:8000/forgot-password', formData);
+        const response = await axios.post(`${API_BASE_URL}/forgot-password`, formData);
         return response.data;
     };
 
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
         const formData = new URLSearchParams();
         formData.append('token', token);
         formData.append('new_password', newPassword);
-        const response = await axios.post('http://localhost:8000/reset-password', formData);
+        const response = await axios.post(`${API_BASE_URL}/reset-password`, formData);
         return response.data;
     };
 

@@ -28,7 +28,7 @@ const SystemSettingsView = ({
     useEffect(() => {
         const fetchConfig = async () => {
             try {
-                const res = await axios.get('http://localhost:8000/admin/config', { headers });
+                const res = await axios.get(`${API_BASE_URL}/admin/config`, { headers });
                 setConfig(res.data);
             } catch (err) {
                 console.error("Failed to fetch settings", err);
@@ -42,7 +42,7 @@ const SystemSettingsView = ({
         setLoading(true);
         setSaved(false);
         try {
-            await axios.put('http://localhost:8000/admin/config', config, { headers });
+            await axios.put(`${API_BASE_URL}/admin/config`, config, { headers });
             setBanner({ message: "System settings updated successfully", type: 'success' });
         } catch (err) {
             setBanner({ message: "Failed to save configuration", type: 'error' });

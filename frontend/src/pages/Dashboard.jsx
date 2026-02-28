@@ -86,7 +86,7 @@ const Dashboard = () => {
             // Simulate delay
             await new Promise(r => setTimeout(r, 1500));
 
-            await axios.post('http://localhost:8000/topup', formData, {
+            await axios.post(`${API_BASE_URL}/topup`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -115,7 +115,7 @@ const Dashboard = () => {
             formData.append('plan_id', 'yearly_license');
             formData.append('payment_method', 'card');
 
-            await axios.post('http://localhost:8000/subscribe', formData, {
+            await axios.post(`${API_BASE_URL}/subscribe`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -145,7 +145,7 @@ const Dashboard = () => {
     const handleUpdateUserRole = async () => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:8000/org/users/${editingUser.id}`, {
+            await axios.put(`${API_BASE_URL}/org/users/${editingUser.id}`, {
                 role: editingUser.role
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -250,7 +250,7 @@ const Dashboard = () => {
                 }
                 try {
                     const token = localStorage.getItem('token');
-                    const res = await axios.post(`http://localhost:8000/org/users/${user.id}/toggle-suspension`, { password }, {
+                    const res = await axios.post(`${API_BASE_URL}/org/users/${user.id}/toggle-suspension`, { password }, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     showSuccess(res.data.message);
@@ -271,7 +271,7 @@ const Dashboard = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`http://localhost:8000/verify-nin?nin=${nin}`, {}, {
+            const response = await axios.post(`${API_BASE_URL}/verify-nin?nin=${nin}`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setResult(response.data);
@@ -327,7 +327,7 @@ const Dashboard = () => {
 
     const fetchHistory = async () => {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8000/transactions', {
+        const response = await axios.get(`${API_BASE_URL}/transactions`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         setTransactions(response.data);
@@ -336,7 +336,7 @@ const Dashboard = () => {
     const fetchOrgUsers = async () => {
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.get('http://localhost:8000/org/users', {
+            const response = await axios.get(`${API_BASE_URL}/org/users`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setOrgUsers(response.data);
@@ -350,7 +350,7 @@ const Dashboard = () => {
         setCreateLoading(true);
         const token = localStorage.getItem('token');
         try {
-            await axios.post('http://localhost:8000/org/users', newUser, {
+            await axios.post(`${API_BASE_URL}/org/users`, newUser, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             showDialog({
@@ -1205,7 +1205,7 @@ const Dashboard = () => {
                                         <p className="text-premium-secondary mb-4">Validate a NIN and retrieve biological data.</p>
                                         <div className="bg-black/40 p-4 rounded-lg overflow-x-auto">
                                             <pre className="text-sm">
-                                                {`curl -X POST "http://localhost:8000/verify-nin?nin=74756011111" \\
+                                                {`curl -X POST "${API_BASE_URL}/verify-nin?nin=74756011111" \\
      -H "Authorization: Bearer <your_token>"`}
                                             </pre>
                                         </div>

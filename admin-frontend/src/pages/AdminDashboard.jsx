@@ -54,21 +54,21 @@ const AdminDashboard = () => {
         setLoading(true);
         // Fetch each independently so one failure doesn't block others
         try {
-            const usersRes = await axios.get('http://localhost:8000/admin/users', { headers });
+            const usersRes = await axios.get(`${API_BASE_URL}/admin/users`, { headers });
             setUsers(usersRes.data);
         } catch (err) {
             console.error("Failed to fetch users", err);
         }
 
         try {
-            const statsRes = await axios.get('http://localhost:8000/admin/stats', { headers });
+            const statsRes = await axios.get(`${API_BASE_URL}/admin/stats`, { headers });
             setStats(statsRes.data);
         } catch (err) {
             console.error("Failed to fetch stats", err);
         }
 
         try {
-            const healthRes = await axios.get('http://localhost:8000/admin/health', { headers });
+            const healthRes = await axios.get(`${API_BASE_URL}/admin/health`, { headers });
             setHealth(healthRes.data);
         } catch (err) {
             console.error("Failed to fetch health", err);
@@ -83,7 +83,7 @@ const AdminDashboard = () => {
 
     const handleUpdateUser = async (userId, data) => {
         try {
-            await axios.put(`http://localhost:8000/admin/users/${userId}`, data, { headers });
+            await axios.put(`${API_BASE_URL}/admin/users/${userId}`, data, { headers });
             fetchData();
         } catch (err) {
             showDialog({
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
 
     const handleBulkAction = async (userIds, action, units = 0) => {
         try {
-            await axios.post('http://localhost:8000/admin/users/bulk', {
+            await axios.post(`${API_BASE_URL}/admin/users/bulk`, {
                 user_ids: userIds,
                 action,
                 units
@@ -113,7 +113,7 @@ const AdminDashboard = () => {
 
     const handleToggleUserSuspension = async (userId, password) => {
         try {
-            await axios.post(`http://localhost:8000/admin/users/${userId}/toggle-suspension`, { password }, { headers });
+            await axios.post(`${API_BASE_URL}/admin/users/${userId}/toggle-suspension`, { password }, { headers });
             fetchData();
             return true;
         } catch (err) {

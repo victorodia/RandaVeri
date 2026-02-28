@@ -32,11 +32,11 @@ const AuditLogsView = ({
     const fetchMetadata = async () => {
         try {
             if (isSuperAdmin) {
-                const orgsRes = await axios.get('http://localhost:8000/admin/organisations', { headers });
+                const orgsRes = await axios.get(`${API_BASE_URL}/admin/organisations`, { headers });
                 setOrgs(orgsRes.data);
             }
 
-            const usersRes = await axios.get('http://localhost:8000/admin/users', { headers });
+            const usersRes = await axios.get(`${API_BASE_URL}/admin/users`, { headers });
             setUsers(usersRes.data);
         } catch (err) {
             console.error("Failed to fetch filter metadata", err);

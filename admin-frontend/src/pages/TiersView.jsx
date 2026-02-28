@@ -25,7 +25,7 @@ const TiersView = ({
     const fetchTiers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:8000/admin/tiers', {
+            const res = await axios.get(`${API_BASE_URL}/admin/tiers`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTiers(res.data);
@@ -44,11 +44,11 @@ const TiersView = ({
         try {
             const token = localStorage.getItem('token');
             if (editingTier) {
-                await axios.put(`http://localhost:8000/admin/tiers/${editingTier.id}`, formData, {
+                await axios.put(`${API_BASE_URL}/admin/tiers/${editingTier.id}`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.post('http://localhost:8000/admin/tiers', formData, {
+                await axios.post(`${API_BASE_URL}/admin/tiers`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -66,7 +66,7 @@ const TiersView = ({
         if (!window.confirm("Delete this tier?")) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:8000/admin/tiers/${tierId}`, {
+            await axios.delete(`${API_BASE_URL}/admin/tiers/${tierId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setBanner({ message: "Tier deleted successfully", type: 'success' });
