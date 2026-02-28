@@ -140,6 +140,36 @@ def bootstrap_orgs():
             # Security Auditor
             audit_keys = ["VIEW_AUDIT_LOGS", "VIEW_REPORTS", "VIEW_TRANSACTIONS"]
             create_role_if_not_exists("Security Auditor", audit_keys)
+            
+            # --- 4. Bootstrap Default Admin User ---
+            admin_username = "admin"
+            admin_email = "admin@randaframes.com"
+            admin_password = "RandaAdmin@2026" # Default sensitive password
+            
+            existing_admin = db.query(User).filter(func.lower(User.username) == admin_username.lower()).first()
+            if not existing_admin:
+                print("INFO: Creating default admin user...")
+                owner_role = db.query(AdminRole).filter(AdminRole.name == "Platform Owner", AdminRole.organisation_id == default_org.id).first()
+                
+                new_admin = User(
+                    username=admin_username,
+                    email=admin_email,
+                    hashed_password=get_password_hash(admin_password),
+                    full_name="Platform Administrator",
+                    role="admin",
+                    organisation_id=default_org.id,
+                    role_id=owner_role.id if owner_role else None,
+                    is_active=True,
+                    is_email_verified=True,
+                    is_password_change_required=False
+                )
+                db.add(new_admin)
+                db.commit()
+                
+                # Create Wallet for Admin
+                admin_wallet = Wallet(user_id=new_admin.id, balance_units=1000000)
+                db.add(admin_wallet)
+                db.commit()
 
         db.close()
     except Exception as e:
