@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useBranding } from '../context/BrandingContext';
 import { LogIn, UserPlus, Shield } from 'lucide-react';
@@ -17,7 +17,7 @@ const Login = () => {
     const navigate = useNavigate();
 
     // Redirect if already logged in
-    React.useEffect(() => {
+    useEffect(() => {
         if (user) {
             if (user.is_password_change_required) {
                 navigate('/change-password');
@@ -30,7 +30,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const data = await login(email, password, branding.orgSlug);
+            const data = await login(email, password, branding?.orgSlug);
             if (data?.require_password_change) {
                 navigate('/change-password');
             } else {
@@ -47,9 +47,10 @@ const Login = () => {
         }
     };
 
+    if (!branding) return null;
+
     return (
         <div className="min-h-screen bg-premium-bg flex items-center justify-center p-4">
-            {/* Theme Toggle in Corner */}
             <div className="fixed top-6 right-6 z-50">
                 <ThemeToggle />
             </div>
@@ -68,7 +69,7 @@ const Login = () => {
                             <Shield size={32} />
                         </div>
                     )}
-                    <h2 className="text-3xl font-bold tracking-tight">{branding.name}</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">{branding.name || "Access Portal"}</h2>
                     <p className="text-premium-secondary mt-2">NIN Validation Aggregator</p>
                 </div>
 
@@ -112,17 +113,16 @@ const Login = () => {
                         {isLogin ? 'Sign In' : 'Sign Up'}
                     </button>
 
-                    <div className="pt-4 border-t border-premium-border">
-                        <a
-                            href="http://localhost:5173"
-                            className="block w-full text-center text-sm text-premium-secondary hover:text-premium-primary transition-colors"
+                    <div className="pt-4 border-t border-premium-border text-center">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/')}
+                            className="text-sm text-premium-secondary hover:text-premium-primary transition-colors"
                         >
-                            Back to Organisation Login
-                        </a>
+                            Back to Organisation Entrance
+                        </button>
                     </div>
                 </form>
-
-
             </div>
         </div>
     );
