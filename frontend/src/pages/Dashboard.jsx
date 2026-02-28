@@ -564,9 +564,9 @@ const Dashboard = () => {
                 <>
                     {/* Sidebar */}
                     <div className="w-64 border-r border-premium-border bg-premium-surface p-6 flex flex-col">
-                        <div className="flex items-center gap-3 mb-10">
+                        <div className="flex items-center gap-3 mb-10 overflow-hidden">
                             {branding.logoUrl ? (
-                                <div className="h-24 w-24 flex items-center justify-center">
+                                <div className="h-10 w-10 flex-shrink-0 bg-premium-primary/10 rounded-xl overflow-hidden flex items-center justify-center border border-premium-primary/20">
                                     <img
                                         src={branding.logoUrl}
                                         alt={branding.name}
@@ -574,11 +574,13 @@ const Dashboard = () => {
                                     />
                                 </div>
                             ) : (
-                                <div className="h-24 w-24 premium-gradient rounded-lg flex items-center justify-center">
-                                    <span className="font-bold text-4xl">{branding.logoText}</span>
+                                <div className="h-10 w-10 flex-shrink-0 premium-gradient rounded-xl flex items-center justify-center shadow-sm">
+                                    <span className="font-bold text-lg text-white">{branding.logoText || (branding.name ? branding.name.charAt(0) : 'R')}</span>
                                 </div>
                             )}
-                            <span className="font-bold text-xl tracking-tight">{branding.name}</span>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className="font-bold text-lg tracking-tight truncate">{branding.name}</span>
+                            </div>
                         </div>
 
                         <nav className="flex-1 space-y-2">
