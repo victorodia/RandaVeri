@@ -199,6 +199,14 @@ def seed_system_roles():
     """Ensure built-in system roles (Super Admin) always exist in the DB."""
     db: Session = next(get_db())
     try:
+        # --- Inline DB migration: add is_system column if it doesn't exist yet ---
+        db.execute(text(
+            "ALTER TABLE admin_roles ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT FALSE"
+        ))
+        db.commit()
+        print("[STARTUP] DB migration: is_system column ensured on admin_roles")
+        # -------------------------------------------------------------------------
+
         all_perm_keys = [p["key"] for p in ALL_PERMISSIONS]
         existing = db.query(AdminRole).filter(
             AdminRole.name == "Super Admin",
