@@ -2239,7 +2239,9 @@ def bulk_update_users(data: dict, admin: User = Depends(get_current_admin_user),
 def get_admin_stats(admin: User = Depends(get_current_platform_user), db: Session = Depends(get_db)):
     from sqlalchemy import func
     
-    user_count_query = db.query(User)
+    user_count_query = db.query(User).join(Organisation)
+    # Always exclude users from deleted organisations (mirrors list_users logic)
+    user_count_query = user_count_query.filter(Organisation.is_deleted == False)
     if admin.organisation_id == 1:
         # Sync with list_users refined logic
         user_count_query = user_count_query.filter(
