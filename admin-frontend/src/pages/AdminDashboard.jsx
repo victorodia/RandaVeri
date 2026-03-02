@@ -48,6 +48,7 @@ const AdminDashboard = () => {
 
     const { logout } = useAuth();
     const token = localStorage.getItem('token');
+    const [platformName, setPlatformName] = useState('Admin Portal');
     const headers = { Authorization: `Bearer ${token}` };
 
     const fetchData = async () => {
@@ -60,22 +61,28 @@ const AdminDashboard = () => {
             console.error("Failed to fetch users", err);
         }
 
-        try {
-            const statsRes = await axios.get(`${API_BASE_URL}/admin/stats`, { headers });
-            setStats(statsRes.data);
-        } catch (err) {
-            console.error("Failed to fetch stats", err);
-        }
-
-        try {
-            const healthRes = await axios.get(`${API_BASE_URL}/admin/health`, { headers });
-            setHealth(healthRes.data);
-        } catch (err) {
-            console.error("Failed to fetch health", err);
-        }
-
+        // The stats and health fetching logic is now handled by the new useEffect below
+        // This fetchData will primarily be for users and other data that needs to be refreshed
+        // independently or on specific actions.
         setLoading(false);
     };
+
+    useEffect(() => {
+        if (!token) return;
+        const headers = { Authorization: `Bearer ${token}` };
+        setLoading(true);
+        Promise.all([
+            axios.get(`${API_BASE_URL}/admin/stats`, { headers }),
+            axios.get(`${API_BASE_URL}/admin/health`, { headers }),
+            axios.get(`${API_BASE_URL}/admin/config`, { headers }),
+        ]).then(([statsRes, healthRes, configRes]) => {
+            setStats(statsRes.data);
+            setHealth(healthRes.data);
+            if (configRes.data?.org_name) setPlatformName(configRes.data.org_name);
+        }).catch(err => {
+            console.error('Dashboard load error:', err);
+        }).finally(() => setLoading(false));
+    }, [token]);
 
     useEffect(() => {
         fetchData();
@@ -228,7 +235,7 @@ const AdminDashboard = () => {
                             <img src="/logo.jpeg" alt="Logo" className="h-full w-full object-cover" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold tracking-tight">Randaframes <span className="text-premium-primary">Admin</span></h1>
+                            <h1 className="text-xl font-bold tracking-tight">{platformName} <span className="text-premium-primary">Admin</span></h1>
                             <div className="flex items-center gap-2">
                                 <span className={`h-2 w-2 rounded-full ${health?.status === 'Healthy' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                 <span className="text-[10px] text-premium-secondary uppercase tracking-widest font-bold">System Online • {health?.latency_ms}ms</span>

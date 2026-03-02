@@ -202,7 +202,7 @@ def seed_system_roles():
         all_perm_keys = [p["key"] for p in ALL_PERMISSIONS]
         existing = db.query(AdminRole).filter(
             AdminRole.name == "Super Admin",
-            AdminRole.organisation_id == 1
+            AdminRole.organisation_id == PLATFORM_ORG_ID
         ).first()
         if existing:
             # Keep is_system flag set and permissions up-to-date
@@ -222,7 +222,7 @@ def seed_system_roles():
             super_admin = AdminRole(
                 name="Super Admin",
                 permissions=all_perm_keys,
-                organisation_id=1,
+                organisation_id=PLATFORM_ORG_ID,
                 is_system=True
             )
             db.add(super_admin)
@@ -250,7 +250,19 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "default_secret_key_change_me")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+
+# --- Platform Business Logic Constants (override via env vars) ---
+PLATFORM_ORG_ID         = int(os.getenv("PLATFORM_ORG_ID", 1))            # ID of the platform owner organisation
+PLATFORM_NAME           = os.getenv("PLATFORM_NAME", "Randaframes")        # Shown in email subjects and config seed
+DEFAULT_PRIMARY_COLOR   = os.getenv("DEFAULT_PRIMARY_COLOR", "#3B82F6")    # Config seed primary color
+DEFAULT_SECONDARY_COLOR = os.getenv("DEFAULT_SECONDARY_COLOR", "#64748B")  # Config seed secondary color
+PASSWORD_RESET_TTL_HOURS = int(os.getenv("PASSWORD_RESET_TTL_HOURS", 1))   # Password reset token lifetime
+EMAIL_VERIFY_TTL_DAYS   = int(os.getenv("EMAIL_VERIFY_TTL_DAYS", 3))       # Email verification token lifetime
+DEFAULT_SUBSCRIPTION_PRICE = float(os.getenv("DEFAULT_SUBSCRIPTION_PRICE", 500000.0))  # Default yearly license fee
+SUBSCRIPTION_BONUS_UNITS    = int(os.getenv("SUBSCRIPTION_BONUS_UNITS", 100))           # Units awarded on subscription
+NEW_ORG_INITIAL_UNITS       = int(os.getenv("NEW_ORG_INITIAL_UNITS", 10))               # Units given to new org wallet
+DEFAULT_UNIT_COST       = float(os.getenv("DEFAULT_UNIT_COST", 1.0))       # Fallback unit cost when no tier set
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -344,7 +356,7 @@ def login(
             candidates = query.all()
             if len(candidates) > 1:
                 # Ambiguous login - try to find one that is a super admin
-                super_admin = next((u for u in candidates if u.organisation_id == 1), None)
+                super_admin = next((u for u in candidates if u.organisation_id == PLATFORM_ORG_ID), None)
                 if super_admin:
                     user = super_admin
                 else:
@@ -493,7 +505,7 @@ def forgot_password(data: schemas.ForgotPasswordRequest, db: Session = Depends(g
     
     # Generate Token
     token = secrets.token_urlsafe(32)
-    expiry = datetime.utcnow() + timedelta(hours=1)
+    expiry = datetime.utcnow() + timedelta(hours=PASSWORD_RESET_TTL_HOURS)
     
     reset_token = PasswordResetToken(
         user_id=user.id,
@@ -576,7 +588,7 @@ def get_me(user: User = Depends(get_current_user)):
     
     # A user is a platform user if they belong to the platform owner organisation (ID 1) 
     # AND (are super-admin, or have at least one assigned platform key)
-    is_platform_user = (user.organisation_id == 1) and (
+    is_platform_user = (user.organisation_id == PLATFORM_ORG_ID) and (
         is_super_admin or 
         bool(all_user_perms & platform_keys)
     )
@@ -1053,7 +1065,7 @@ def get_current_platform_user(token: str = Depends(oauth2_scheme), db: Session =
     user = get_current_user(token, db)
     
     # ONLY users belonging to the platform owner organisation (ID 1) can access the admin portal.
-    if user.organisation_id != 1:
+    if user.organisation_id != PLATFORM_ORG_ID:
         raise HTTPException(status_code=403, detail="Admin Portal access restricted to platform administrators")
 
     # Check if user has ANY of the platform permissions defined in ALL_PERMISSIONS
@@ -1144,7 +1156,7 @@ def register(data: schemas.RegisterUser, admin: User = Depends(get_current_admin
 
         # Generate Verification Token
         v_token = secrets.token_urlsafe(32)
-        v_expiry = datetime.utcnow() + timedelta(days=3)
+        v_expiry = datetime.utcnow() + timedelta(days=EMAIL_VERIFY_TTL_DAYS)
         verify_token = EmailVerificationToken(
             user_id=new_user.id,
             token=v_token,
@@ -1177,10 +1189,10 @@ def list_users(admin: User = Depends(get_current_platform_user), db: Session = D
     query = query.filter(Organisation.is_deleted == False)
     
     # Refined Visibility Logic
-    if admin.organisation_id == 1:
+    if admin.organisation_id == PLATFORM_ORG_ID:
         # Platform Admins see Org 1 staff OR any Org Admin
         query = query.filter(
-            (User.organisation_id == 1) | 
+            (User.organisation_id == PLATFORM_ORG_ID) | 
             (User.role.like("%org_admin%"))
         )
     else:
@@ -1295,7 +1307,7 @@ def subscribe_org(
     if not user.org:
         raise HTTPException(status_code=400, detail="User does not belong to an organisation")
         
-    price = user.org.subscription_price or 500000.0
+    price = user.org.subscription_price or DEFAULT_SUBSCRIPTION_PRICE
     print(f"DEBUG: Processing subscription for Organisation ID: {user.org.id}, Plan: {plan_id}, Payment: {payment_method}")
     
     # Simulate payment processing
@@ -1313,7 +1325,7 @@ def subscribe_org(
         db.add(user.org.wallet)
     
     units_before = user.org.wallet.balance_units
-    bonus_units = 100
+    bonus_units = SUBSCRIPTION_BONUS_UNITS
     user.org.wallet.balance_units += bonus_units
     units_after = user.org.wallet.balance_units
     
@@ -1412,7 +1424,7 @@ def create_org_user(data: dict, admin: User = Depends(get_current_user), db: Ses
 
         # Generate Verification Token
         v_token = secrets.token_urlsafe(32)
-        v_expiry = datetime.utcnow() + timedelta(days=3)
+        v_expiry = datetime.utcnow() + timedelta(days=EMAIL_VERIFY_TTL_DAYS)
         verify_token = EmailVerificationToken(
             user_id=new_user.id,
             token=v_token,
@@ -1672,7 +1684,7 @@ def create_organisation(
 
             # Generate Verification Token
             v_token = secrets.token_urlsafe(32)
-            v_expiry = datetime.utcnow() + timedelta(days=3)
+            v_expiry = datetime.utcnow() + timedelta(days=EMAIL_VERIFY_TTL_DAYS)
             verify_token = EmailVerificationToken(
                 user_id=new_user.id,
                 token=v_token,
@@ -1690,7 +1702,7 @@ def create_organisation(
             
             # Create Org Wallet with initial units
             # We use db.flush() so if wallet fails, everything rolls back on except
-            initial_units = 10
+            initial_units = NEW_ORG_INITIAL_UNITS
             new_wallet = Wallet(organisation_id=new_org.id, balance_units=initial_units)
             db.add(new_wallet)
             db.flush()
@@ -1979,7 +1991,7 @@ def get_audit_logs(admin: User = Depends(get_current_platform_user), db: Session
     """
     query = db.query(ActivityLog)
     
-    if admin.organisation_id != 1:
+    if admin.organisation_id != PLATFORM_ORG_ID:
         query = query.filter(ActivityLog.organisation_id == admin.organisation_id)
         
     logs = query.order_by(ActivityLog.timestamp.desc()).limit(200).all()
@@ -2017,10 +2029,10 @@ def get_system_config(admin: User = Depends(get_current_platform_user), db: Sess
     config = db.query(Config).first()
     if not config:
         config = Config(
-            org_name="Randaframes",
+            org_name=PLATFORM_NAME,
             logo_url="",
-            primary_color="#3B82F6",
-            secondary_color="#64748B"
+            primary_color=DEFAULT_PRIMARY_COLOR,
+            secondary_color=DEFAULT_SECONDARY_COLOR
         )
         db.add(config)
         db.commit()
@@ -2032,10 +2044,10 @@ def get_public_config(db: Session = Depends(get_db)):
     config = db.query(Config).first()
     if not config:
         config = Config(
-            org_name="Randaframes",
+            org_name=PLATFORM_NAME,
             logo_url="",
-            primary_color="#3B82F6",
-            secondary_color="#64748B"
+            primary_color=DEFAULT_PRIMARY_COLOR,
+            secondary_color=DEFAULT_SECONDARY_COLOR
         )
         db.add(config)
         db.commit()
@@ -2330,10 +2342,10 @@ def get_admin_stats(admin: User = Depends(get_current_platform_user), db: Sessio
     user_count_query = db.query(User).join(Organisation)
     # Always exclude users from deleted organisations (mirrors list_users logic)
     user_count_query = user_count_query.filter(Organisation.is_deleted == False)
-    if admin.organisation_id == 1:
+    if admin.organisation_id == PLATFORM_ORG_ID:
         # Sync with list_users refined logic
         user_count_query = user_count_query.filter(
-            (User.organisation_id == 1) | 
+            (User.organisation_id == PLATFORM_ORG_ID) | 
             (User.role.like("%org_admin%"))
         )
     else:

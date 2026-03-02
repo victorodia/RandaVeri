@@ -34,8 +34,11 @@ const OrganisationsView = ({
     const [formData, setFormData] = useState({
         name: '', slug: '', logo: null, primary_color: '#3B82F6', secondary_color: '#64748B',
         admin_username: '', admin_email: '', admin_password: '', admin_password_confirm: '', admin_telephone: '',
-        tier_id: '', custom_unit_cost: '', subscription_price: '500000'
+        tier_id: '', custom_unit_cost: '', subscription_price: ''
     });
+
+    // System config defaults (fetched from backend)
+    const [sysConfig, setSysConfig] = useState({ subscription_price: '500000', primary_color: '#3B82F6', secondary_color: '#64748B' });
 
     const [randomSuffix, setRandomSuffix] = useState('');
 
@@ -82,6 +85,14 @@ const OrganisationsView = ({
     useEffect(() => {
         fetchOrgs();
         fetchTiers();
+        // Fetch system config for dynamic defaults
+        axios.get(`${API}/config`).then(res => {
+            setSysConfig({
+                subscription_price: (res.data.subscription_price ?? 500000).toString(),
+                primary_color: res.data.primary_color || '#3B82F6',
+                secondary_color: res.data.secondary_color || '#64748B',
+            });
+        }).catch(() => { });
     }, []);
 
     const filteredOrgs = orgs.filter(o =>
@@ -236,9 +247,11 @@ const OrganisationsView = ({
                                 setRandomSuffix(Math.floor(1000 + Math.random() * 9000).toString());
                                 setEditingOrg(null);
                                 setFormData({
-                                    name: '', slug: '', logo: null, primary_color: '#3B82F6', secondary_color: '#64748B',
+                                    name: '', slug: '', logo: null,
+                                    primary_color: sysConfig.primary_color,
+                                    secondary_color: sysConfig.secondary_color,
                                     admin_username: '', admin_email: '', admin_password: '', admin_password_confirm: '', admin_telephone: '',
-                                    tier_id: '', custom_unit_cost: '', subscription_price: '500000'
+                                    tier_id: '', custom_unit_cost: '', subscription_price: sysConfig.subscription_price
                                 });
                                 setIsModalOpen(true);
                             }}

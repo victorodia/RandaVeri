@@ -8,6 +8,7 @@ load_dotenv(override=True)
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL")
 BREVO_SENDER_NAME = os.getenv("BREVO_SENDER_NAME")
+PLATFORM_NAME = os.getenv("PLATFORM_NAME", "Randaframes")
 
 print(f"DEBUG: EmailService (Re)Loaded. Sender: {BREVO_SENDER_EMAIL}")
 
@@ -62,7 +63,7 @@ class EmailService:
 
     @staticmethod
     def send_reset_password_email(to_email, username, reset_link):
-        subject = "Reset Your Password - Randaframes"
+        subject = f"Reset Your Password - {PLATFORM_NAME}"
         html_content = f"""
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
             <h2 style="color: #3b82f6;">Password Reset Request</h2>
@@ -81,10 +82,10 @@ class EmailService:
 
     @staticmethod
     def send_verification_email(to_email, username, verification_link):
-        subject = "Verify Your Email - Randaframes"
+        subject = f"Verify Your Email - {PLATFORM_NAME}"
         html_content = f"""
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-            <h2 style="color: #10b981;">Welcome to Randaframes!</h2>
+            <h2 style="color: #10b981;">Welcome to {PLATFORM_NAME}!</h2>
             <p>Hello <strong>{username}</strong>,</p>
             <p>Thank you for joining. Please verify your email address to activate your account:</p>
             <div style="text-align: center; margin: 30px 0;">
