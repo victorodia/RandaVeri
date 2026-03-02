@@ -1471,8 +1471,8 @@ def create_org_user(data: dict, admin: User = Depends(get_current_user), db: Ses
         db.add(verify_token)
         db.commit()
 
-        # Send Verification Email — org/users created from admin portal verify via admin frontend
-        v_link = f"{ADMIN_FRONTEND_URL}/verify-email?token={v_token}"
+        # Send Verification Email — org/users created from the frontend verify via the frontend
+        v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
         EmailService.send_verification_email(new_user.email, new_user.username, v_link)
         
         log_activity(db, admin, "USER_CREATION", {"created_user": username, "role_id": role_id})
