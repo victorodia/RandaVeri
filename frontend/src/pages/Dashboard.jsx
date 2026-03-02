@@ -43,7 +43,7 @@ const Dashboard = () => {
     const [subTab, setSubTab] = useState('form'); // 'form' or 'logs'
     const [transactions, setTransactions] = useState([]);
     const [orgUsers, setOrgUsers] = useState([]);
-    const [newUser, setNewUser] = useState({ username: '', email: '', telephone: '', password: '', role: 'user' });
+    const [newUser, setNewUser] = useState({ username: '', email: '', telephone: '', password: '', role: 'IDENTITY' });
     const [createLoading, setCreateLoading] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
@@ -358,7 +358,7 @@ const Dashboard = () => {
                 title: 'User Created',
                 message: `Verification email has been sent to ${newUser.email}, and the user needs to be verified.`
             });
-            setNewUser({ username: '', email: '', telephone: '', password: '', role: 'user' });
+            setNewUser({ username: '', email: '', telephone: '', password: '', role: 'IDENTITY' });
             fetchOrgUsers();
         } catch (error) {
             showDialog({
@@ -1057,10 +1057,8 @@ const Dashboard = () => {
                                                 value={newUser.role}
                                                 onChange={e => setNewUser({ ...newUser, role: e.target.value })}
                                             >
-                                                <option value="user">Standard User</option>
-                                                <option value="IDENTITY">Identity Verification Only</option>
-                                                <option value="WALLET">Wallet Manager Only</option>
-                                                <option value="IDENTITY,WALLET">Full Access</option>
+                                                <option value="IDENTITY">Verification Access</option>
+                                                <option value="org_admin,WALLET">Administrator</option>
                                             </select>
                                         </div>
                                         <div className="md:col-span-2">
@@ -1093,7 +1091,13 @@ const Dashboard = () => {
                                                 <tr key={u.id} className="text-sm hover:bg-premium-overlay transition-colors">
                                                     <td className="py-4 font-medium">{u.username}</td>
                                                     <td className="py-4 text-premium-secondary">{u.email}</td>
-                                                    <td className="py-4"><span className="code-badge">{u.role}</span></td>
+                                                    <td className="py-4">
+                                                        <span className="code-badge">
+                                                            {u.role?.includes('org_admin') ? 'Administrator'
+                                                                : u.role?.includes('IDENTITY') ? 'Verification Access'
+                                                                    : u.role || '—'}
+                                                        </span>
+                                                    </td>
                                                     <td className="py-4">
                                                         <span className={`px-2 py-1 rounded text-xs ${u.is_active ? 'bg-status-emerald/20 text-status-emerald' : 'bg-status-red/20 text-status-red'}`}>
                                                             {u.is_active ? 'Active' : 'Inactive'}
@@ -1171,10 +1175,8 @@ const Dashboard = () => {
                                                         value={editingUser.role}
                                                         onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
                                                     >
-                                                        <option value="user">Standard User</option>
-                                                        <option value="IDENTITY">Identity Verification Only</option>
-                                                        <option value="WALLET">Wallet Manager Only</option>
-                                                        <option value="IDENTITY,WALLET">Full Access</option>
+                                                        <option value="IDENTITY">Verification Access</option>
+                                                        <option value="org_admin,WALLET">Administrator</option>
                                                     </select>
                                                 </div>
                                                 <div className="flex gap-4 pt-2">
