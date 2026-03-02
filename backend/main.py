@@ -614,19 +614,27 @@ def get_external_token():
 
     try:
         response = requests.post(EXTERNAL_LOGIN_URL, json={"payload": encrypted_payload}, timeout=10)
+        print(f"INFO: External Login HTTP {response.status_code} | body[:300]: {response.text[:300]}")
         if response.status_code != 200:
-            print(f"ERROR: External Login HTTP {response.status_code}: {response.text[:200]}")
+            print(f"ERROR: External Login HTTP {response.status_code}: {response.text[:300]}")
             return None
 
-        resp_data = response.json()
+        # Parse JSON safely — an empty or HTML body raises JSONDecodeError
+        try:
+            resp_data = response.json()
+        except ValueError as json_err:
+            print(f"ERROR: External Login response is not valid JSON: {json_err} | raw: {response.text[:300]}")
+            return None
+
         if "payload" not in resp_data:
             print(f"ERROR: External Login response has no 'payload' key: {resp_data}")
             return None
 
         decrypted_resp = crypto_service.decrypt(resp_data["payload"])
         status = decrypted_resp.get("status")
+        print(f"INFO: External Login decrypted status={status}")
 
-        # Accept both integer 200 and string "200"
+        # Accept both integer 200 and string "200" / "00"
         if status in [200, "200", "00"]:
             token = decrypted_resp.get("data", {}).get("access_token")
             if not token:
@@ -640,7 +648,7 @@ def get_external_token():
             print(f"ERROR: External Login non-200 status: {decrypted_resp}")
             return None
     except Exception as e:
-        print(f"ERROR: External Login exception: {str(e)}")
+        print(f"ERROR: External Login exception: {type(e).__name__}: {str(e)}")
         return None
 
 @app.get("/permissions")
