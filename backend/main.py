@@ -23,7 +23,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from sqlalchemy import func, text
+from sqlalchemy import func, text, cast, Integer
 from sqlalchemy.orm import Session
 
 load_dotenv()
@@ -2164,16 +2164,16 @@ def get_usage_analytics(
         growth_rate = 100.0
 
     # 4. Performance Metrics (Peak Hour & Success Rate)
-    # Peak Hour
+    # Peak Hour — uses extract() which works on PostgreSQL and SQLite 3.38+
     peak_hour_result = db.query(
-        func.strftime('%H', Transaction.timestamp).label('hour'),
+        cast(func.extract('hour', Transaction.timestamp), Integer).label('hour'),
         func.count(Transaction.id).label('count')
     ).filter(
         Transaction.timestamp >= primary_start,
         Transaction.type == "NIN_VALIDATION"
-    ).group_by('hour').order_by(text('count DESC')).first()
-    
-    peak_hour = f"{peak_hour_result.hour}:00" if peak_hour_result else "N/A"
+    ).group_by(text('hour')).order_by(text('count DESC')).first()
+
+    peak_hour = f"{int(peak_hour_result.hour):02d}:00" if peak_hour_result else "N/A"
 
     # Success Rate (Attempts vs Actual Transactions)
     total_attempts = db.query(ActivityLog).filter(
@@ -2257,15 +2257,15 @@ def get_extended_analytics(admin: User = Depends(get_current_platform_user), db:
     churn_orgs = db.query(Organisation.name).filter(~Organisation.id.in_(active_org_ids), Organisation.slug != "default").all()
     churn_risk_data = [r.name for r in churn_orgs]
 
-    # --- 3. OPERATIONAL PERFORMANCE ---
-    # Activity Heatmap (7 Days x 24 Hours)
-    # SQLite strftime('%w', timestamp) returns 0 (Sunday) to 6 (Saturday)
-    # SQLite strftime('%H', timestamp) returns 00 to 23
+    # Activity Heatmap — uses extract() compatible with PostgreSQL
     heatmap_raw = db.query(
-        func.strftime('%w', Transaction.timestamp).label('day'),
-        func.strftime('%H', Transaction.timestamp).label('hour'),
+        cast(func.extract('dow', Transaction.timestamp), Integer).label('day'),
+        cast(func.extract('hour', Transaction.timestamp), Integer).label('hour'),
         func.count(Transaction.id).label('count')
-    ).filter(Transaction.type == "NIN_VALIDATION").group_by('day', 'hour').all()
+    ).filter(Transaction.type == "NIN_VALIDATION").group_by(
+        cast(func.extract('dow', Transaction.timestamp), Integer),
+        cast(func.extract('hour', Transaction.timestamp), Integer)
+    ).all()
     
     heatmap_data = []
     # Initialize grid
@@ -2281,15 +2281,18 @@ def get_extended_analytics(admin: User = Depends(get_current_platform_user), db:
         for h in range(24):
             heatmap_data.append({"day": day_name, "hour": h, "value": grid[d_idx][h]})
 
-    # Error Breakdown
-    # Track "NIN_VALIDATION" actions in ActivityLog that didn't lead to a successful Transaction
-    # SQLite json_extract(details, '$.reason')
-    error_query = db.query(
-        func.json_extract(ActivityLog.details, '$.reason').label('reason'),
-        func.count(ActivityLog.id).label('count')
-    ).filter(ActivityLog.action_type == "VALIDATION_FAILED").group_by('reason').all()
-    
-    error_data = [{"name": r.reason or "Unknown Error", "value": r.count} for r in error_query]
+    # Error Breakdown — fetch and group in Python (avoids DB-specific json_extract)
+    error_logs = db.query(ActivityLog.details).filter(
+        ActivityLog.action_type == "VALIDATION_FAILED",
+        ActivityLog.details.isnot(None)
+    ).all()
+    error_counts: dict = {}
+    for (details,) in error_logs:
+        reason = "Unknown Error"
+        if isinstance(details, dict):
+            reason = details.get("reason") or "Unknown Error"
+        error_counts[reason] = error_counts.get(reason, 0) + 1
+    error_data = [{"name": k, "value": v} for k, v in error_counts.items()]
 
     # --- 4. BEHAVIOR ---
     # Power Users (Top 10)
