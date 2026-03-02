@@ -1,4 +1,4 @@
-﻿try:
+try:
     from .database import SessionLocal, engine, User, Wallet, Transaction, Config, RevokedToken, init_db, get_db, Organisation, ActivityLog, Tier, AdminRole, PasswordResetToken, EmailVerificationToken
     from .crypto import crypto_service
     from .email_service import EmailService
