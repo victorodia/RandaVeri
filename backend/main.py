@@ -194,9 +194,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+def seed_system_roles():
+    """Ensure built-in system roles (Super Admin) always exist in the DB."""
+    db: Session = next(get_db())
+    try:
+        all_perm_keys = [p["key"] for p in ALL_PERMISSIONS]
+        existing = db.query(AdminRole).filter(
+            AdminRole.name == "Super Admin",
+            AdminRole.organisation_id == 1
+        ).first()
+        if existing:
+            # Keep is_system flag set and permissions up-to-date
+            changed = False
+            if not existing.is_system:
+                existing.is_system = True
+                changed = True
+            if set(existing.permissions or []) != set(all_perm_keys):
+                existing.permissions = all_perm_keys
+                changed = True
+            if changed:
+                db.commit()
+                print("[STARTUP] Super Admin role updated")
+            else:
+                print("[STARTUP] Super Admin role already up-to-date")
+        else:
+            super_admin = AdminRole(
+                name="Super Admin",
+                permissions=all_perm_keys,
+                organisation_id=1,
+                is_system=True
+            )
+            db.add(super_admin)
+            db.commit()
+            print("[STARTUP] Super Admin role seeded successfully")
+    except Exception as e:
+        print(f"[STARTUP] Error seeding Super Admin role: {e}")
+    finally:
+        db.close()
+
 @app.get("/")
 def read_root():
     return {"status": "online", "message": "Randaframes API is running", "timestamp": datetime.utcnow().isoformat()}
+
 
 # Mount static files for uploads
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
@@ -221,10 +261,15 @@ def has_permission(user: "User", perm: str) -> bool:
     """
     Check whether a user holds a given permission key.
     - Super admins (role == 'admin') always pass.
-    - NEW: If user has a role_id, check the AdminRole.permissions JSON list.
+    - System roles (is_system=True, e.g. Super Admin) also always pass — full bypass.
+    - If user has a role_id, check the AdminRole.permissions JSON list.
     - Legacy fallback: comma-separated string in user.role.
     """
     if user.role == "admin":
+        return True
+
+    # System roles (Super Admin) get full bypass — same as role == 'admin'
+    if user.admin_role and user.admin_role.is_system:
         return True
     
     # Check Dynamic Role first
@@ -247,6 +292,10 @@ def has_permission(user: "User", perm: str) -> bool:
         if legacy in parts and perm in mapped:
             return True
     return False
+
+def is_admin_user(user: "User") -> bool:
+    """Returns True for hardcoded admins AND users with a system role (e.g. Super Admin)."""
+    return user.role == "admin" or (user.admin_role is not None and user.admin_role.is_system)
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -661,9 +710,20 @@ def list_permissions(user: User = Depends(get_current_user)):
 @app.get("/admin/roles")
 def list_roles(admin: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Platform owner sees all, others see their org's roles
-    if admin.role == "admin":
-         return db.query(AdminRole).all()
-    return db.query(AdminRole).filter(AdminRole.organisation_id == admin.organisation_id).all()
+    if admin.role == "admin" or is_admin_user(admin):
+        roles = db.query(AdminRole).all()
+    else:
+        roles = db.query(AdminRole).filter(AdminRole.organisation_id == admin.organisation_id).all()
+    return [
+        {
+            "id": r.id,
+            "name": r.name,
+            "permissions": r.permissions or [],
+            "organisation_id": r.organisation_id,
+            "is_system": r.is_system or False,
+        }
+        for r in roles
+    ]
 
 @app.post("/admin/roles")
 def create_role(data: dict, admin: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -710,8 +770,12 @@ def delete_role(role_id: int, admin: User = Depends(get_current_user), db: Sessi
     role = db.query(AdminRole).filter(AdminRole.id == role_id).first()
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
+
+    # System roles (e.g. Super Admin) cannot be deleted
+    if role.is_system:
+        raise HTTPException(status_code=403, detail="System roles cannot be deleted")
         
-    if admin.role != "admin" and role.organisation_id != admin.organisation_id:
+    if not is_admin_user(admin) and role.organisation_id != admin.organisation_id:
         raise HTTPException(status_code=403, detail="Forbidden")
         
     db.delete(role)

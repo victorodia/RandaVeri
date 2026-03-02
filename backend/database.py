@@ -72,6 +72,7 @@ class AdminRole(Base):
     name = Column(String, index=True)
     permissions = Column(JSON, default=list) # List of permission keys: ["VIEW_REVENUE", "CREATE_USER"]
     organisation_id = Column(Integer, ForeignKey("organisations.id"))
+    is_system = Column(Boolean, default=False)  # Built-in roles cannot be deleted
     
     organisation = relationship("Organisation", back_populates="roles")
     users = relationship("User", back_populates="admin_role")

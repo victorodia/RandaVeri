@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
     Plus, Shield, Edit2, Trash2, CheckCircle,
-    XCircle, Lock, Info, ChevronRight, Save
+    XCircle, Lock, Info, ChevronRight, Save, ShieldCheck
 } from 'lucide-react';
 import Banner from '../components/Banner';
 
@@ -243,13 +243,21 @@ const RolesView = ({ myPermissions = [], isSuperAdmin = false }) => {
                         <div className="space-y-4">
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-2">
-                                    <div className="p-1.5 bg-premium-primary/10 rounded-lg">
-                                        <Shield size={16} className="text-premium-primary" />
+                                    <div className={`p-1.5 rounded-lg ${role.is_system ? 'bg-amber-500/20' : 'bg-premium-primary/10'}`}>
+                                        {role.is_system
+                                            ? <ShieldCheck size={16} className="text-amber-400" />
+                                            : <Shield size={16} className="text-premium-primary" />
+                                        }
                                     </div>
                                     <h3 className="font-bold text-lg">{role.name}</h3>
+                                    {role.is_system && (
+                                        <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-[10px] font-bold uppercase">
+                                            <Lock size={9} /> System
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {canManageRoles && (
+                                    {canManageRoles && !role.is_system && (
                                         <>
                                             <button
                                                 onClick={() => { setEditingRole(role); setIsEditModalOpen(true); }}
@@ -296,12 +304,18 @@ const RolesView = ({ myPermissions = [], isSuperAdmin = false }) => {
                                 <Info size={12} />
                                 {(role.users?.length || 0)} Users assigned
                             </div>
-                            <button
-                                onClick={() => { setEditingRole(role); setIsEditModalOpen(true); }}
-                                className="text-premium-primary hover:underline flex items-center gap-1"
-                            >
-                                Details <ChevronRight size={12} />
-                            </button>
+                            {!role.is_system ? (
+                                <button
+                                    onClick={() => { setEditingRole(role); setIsEditModalOpen(true); }}
+                                    className="text-premium-primary hover:underline flex items-center gap-1"
+                                >
+                                    Details <ChevronRight size={12} />
+                                </button>
+                            ) : (
+                                <span className="flex items-center gap-1 text-amber-400/70 italic">
+                                    <Lock size={10} /> Protected
+                                </span>
+                            )}
                         </div>
                     </div>
                 ))}
