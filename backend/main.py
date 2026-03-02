@@ -734,6 +734,23 @@ def list_roles(admin: User = Depends(get_current_user), db: Session = Depends(ge
         roles = db.query(AdminRole).all()
     else:
         roles = db.query(AdminRole).filter(AdminRole.organisation_id == admin.organisation_id).all()
+
+    role_ids = [r.id for r in roles]
+
+    # Count only active users from non-deleted orgs per role (mirrors what the users list shows)
+    counts_query = (
+        db.query(User.role_id, func.count(User.id).label("n"))
+        .join(Organisation, User.organisation_id == Organisation.id)
+        .filter(
+            User.role_id.in_(role_ids),
+            User.is_active == True,
+            Organisation.is_deleted == False,
+        )
+        .group_by(User.role_id)
+        .all()
+    )
+    count_map = {row.role_id: row.n for row in counts_query}
+
     return [
         {
             "id": r.id,
@@ -741,7 +758,7 @@ def list_roles(admin: User = Depends(get_current_user), db: Session = Depends(ge
             "permissions": r.permissions or [],
             "organisation_id": r.organisation_id,
             "is_system": r.is_system or False,
-            "user_count": len(r.users) if r.users is not None else 0,
+            "user_count": count_map.get(r.id, 0),
         }
         for r in roles
     ]
