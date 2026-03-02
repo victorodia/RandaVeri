@@ -589,42 +589,58 @@ EXTERNAL_API_BASE = "http://premiere.vuvaa.com/demo/NIN_Validation/nin_processor
 EXTERNAL_API_URL = f"{EXTERNAL_API_BASE}/verify_nin"
 EXTERNAL_LOGIN_URL = f"{EXTERNAL_API_BASE}/login"
 
-# Cache for External API Token
+# Cache for External API Token — expires after 55 minutes to prevent stale tokens
 external_token_cache = {
     "token": None,
     "expiry": None
 }
 
 def get_external_token():
-    # Simple cache check (could be improved with expiry check)
-    if external_token_cache["token"]:
+    """Obtain (or return a cached) external API token. TTL = 55 minutes."""
+    now = datetime.utcnow()
+    # Return cached token only if it hasn't expired yet
+    if external_token_cache["token"] and external_token_cache["expiry"] and now < external_token_cache["expiry"]:
         return external_token_cache["token"]
-    
+
     print("INFO: Fetching new token from External API")
-    login_payload = {
-        "username": os.getenv("EXTERNAL_API_USERNAME"),
-        "password": os.getenv("EXTERNAL_API_PASSWORD")
-    }
+    username = os.getenv("EXTERNAL_API_USERNAME")
+    password = os.getenv("EXTERNAL_API_PASSWORD")
+    if not username or not password:
+        print("ERROR: EXTERNAL_API_USERNAME or EXTERNAL_API_PASSWORD env vars not set")
+        return None
+
+    login_payload = {"username": username, "password": password}
     encrypted_payload = crypto_service.encrypt(login_payload)
-    
+
     try:
         response = requests.post(EXTERNAL_LOGIN_URL, json={"payload": encrypted_payload}, timeout=10)
         if response.status_code != 200:
-            print(f"ERROR: External Login Failed: {response.status_code}")
+            print(f"ERROR: External Login HTTP {response.status_code}: {response.text[:200]}")
             return None
-        
+
         resp_data = response.json()
+        if "payload" not in resp_data:
+            print(f"ERROR: External Login response has no 'payload' key: {resp_data}")
+            return None
+
         decrypted_resp = crypto_service.decrypt(resp_data["payload"])
-        
-        if decrypted_resp.get("status") == 200:
-            token = decrypted_resp["data"]["access_token"]
+        status = decrypted_resp.get("status")
+
+        # Accept both integer 200 and string "200"
+        if status in [200, "200", "00"]:
+            token = decrypted_resp.get("data", {}).get("access_token")
+            if not token:
+                print(f"ERROR: External Login succeeded but no access_token in response: {decrypted_resp}")
+                return None
             external_token_cache["token"] = token
+            external_token_cache["expiry"] = now + timedelta(minutes=55)
+            print("INFO: External API token obtained and cached (TTL 55 min)")
             return token
         else:
-            print(f"DEBUG: External Login Status not 200: {decrypted_resp}")
+            print(f"ERROR: External Login non-200 status: {decrypted_resp}")
             return None
     except Exception as e:
-        print(f"DEBUG: External Login Exception: {str(e)}")
+        print(f"ERROR: External Login exception: {str(e)}")
         return None
 
 @app.get("/permissions")
@@ -2325,24 +2341,46 @@ def get_admin_stats(admin: User = Depends(get_current_platform_user), db: Sessio
     if total_attempts > 0:
         success_rate = round((successful_txs / total_attempts) * 100, 1)
 
-    # Check external units
+    # Check external master wallet balance
     ext_token = get_external_token()
     external_units = 0
     if ext_token:
         try:
             wallet_url = f"{EXTERNAL_API_BASE}/get_wallet_details"
-            payload = crypto_service.encrypt({"username": "randa_1769113347fn5h@vmail.com"})
-            resp = requests.post(wallet_url, json={"payload": payload}, headers={"Authorization": f"Bearer {ext_token}"})
+            wallet_username = os.getenv("EXTERNAL_API_USERNAME", "randa_1769113347fn5h@vmail.com")
+            payload = crypto_service.encrypt({"username": wallet_username})
+            resp = requests.post(
+                wallet_url,
+                json={"payload": payload},
+                headers={"Authorization": f"Bearer {ext_token}"},
+                timeout=10
+            )
+            print(f"INFO: Master wallet HTTP {resp.status_code}")
             if resp.status_code == 200:
-                dec = crypto_service.decrypt(resp.json()["payload"])
-                if dec.get("status") in [200, "200", "00"]:
-                    data = dec.get("data")
-                    if isinstance(data, list) and len(data) > 0:
-                        external_units = data[0].get("validation_units", 0)
-                    elif isinstance(data, dict):
-                        external_units = data.get("validation_units", 0)
-        except:
-            pass
+                resp_json = resp.json()
+                if "payload" not in resp_json:
+                    print(f"ERROR: Wallet response has no 'payload' key: {resp_json}")
+                else:
+                    dec = crypto_service.decrypt(resp_json["payload"])
+                    print(f"INFO: Wallet decrypted response status={dec.get('status')} keys={list(dec.keys())}")
+                    if dec.get("status") in [200, "200", "00"]:
+                        data = dec.get("data")
+                        if isinstance(data, list) and len(data) > 0:
+                            external_units = data[0].get("validation_units", 0)
+                        elif isinstance(data, dict):
+                            external_units = data.get("validation_units", 0)
+                        print(f"INFO: Master wallet balance = {external_units}")
+                    else:
+                        print(f"ERROR: Wallet response non-200 status: {dec}")
+            elif resp.status_code == 401:
+                # Token likely expired — clear cache so next call re-authenticates
+                print("ERROR: Wallet fetch got 401 — clearing token cache for re-auth")
+                external_token_cache["token"] = None
+                external_token_cache["expiry"] = None
+            else:
+                print(f"ERROR: Wallet fetch HTTP {resp.status_code}: {resp.text[:200]}")
+        except Exception as e:
+            print(f"ERROR: Master wallet fetch exception: {str(e)}")
             
     return {
         "total_users": user_count,
