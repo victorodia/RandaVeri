@@ -610,7 +610,7 @@ def get_external_token():
         return None
 
     login_payload = {"username": username, "password": password}
-    encrypted_payload = crypto_service.encrypt(login_payload)
+    encrypted_payload = crypto_service.encrypt_legacy(login_payload)  # static IV for PHP server
 
     try:
         response = requests.post(EXTERNAL_LOGIN_URL, json={"payload": encrypted_payload}, timeout=10)
@@ -2356,7 +2356,7 @@ def get_admin_stats(admin: User = Depends(get_current_platform_user), db: Sessio
         try:
             wallet_url = f"{EXTERNAL_API_BASE}/get_wallet_details"
             wallet_username = os.getenv("EXTERNAL_API_USERNAME", "randa_1769113347fn5h@vmail.com")
-            payload = crypto_service.encrypt({"username": wallet_username})
+            payload = crypto_service.encrypt_legacy({"username": wallet_username})  # static IV for PHP server
             resp = requests.post(
                 wallet_url,
                 json={"payload": payload},

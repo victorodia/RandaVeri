@@ -26,8 +26,8 @@ class CryptoService:
 
     def encrypt(self, data: dict) -> str:
         """
-        Encrypts data using AES-CBC with a random IV.
-        The IV is prepended to the ciphertext.
+        Encrypts data using AES-CBC with a random IV (prepended).
+        Used for internal API communication.
         """
         json_str = json.dumps(data)
         iv = Random.new().read(AES.block_size)
@@ -36,6 +36,18 @@ class CryptoService:
         encrypted_data = cipher.encrypt(padded_data)
         # Combine IV + Ciphertext for storage/transmission
         return base64.b64encode(iv + encrypted_data).decode('utf-8')
+
+    def encrypt_legacy(self, data: dict) -> str:
+        """
+        Encrypts data using AES-CBC with the STATIC legacy IV.
+        Required for the external PHP API which uses a fixed IV and
+        cannot parse a prepended-IV format (returns null on decrypt).
+        """
+        json_str = json.dumps(data)
+        cipher = AES.new(self.key, AES.MODE_CBC, self.legacy_iv)
+        padded_data = pad(json_str.encode('utf-8'), AES.block_size)
+        encrypted_data = cipher.encrypt(padded_data)
+        return base64.b64encode(encrypted_data).decode('utf-8')
 
     def decrypt(self, encrypted_b64: str) -> dict:
         """
