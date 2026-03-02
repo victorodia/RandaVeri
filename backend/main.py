@@ -205,6 +205,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Centralized URLs for Email Links
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+ADMIN_FRONTEND_URL = os.getenv("ADMIN_FRONTEND_URL", "http://localhost:5174").rstrip("/")
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "default_secret_key_change_me")
@@ -1088,8 +1089,8 @@ def register(data: schemas.RegisterUser, admin: User = Depends(get_current_admin
         db.add(verify_token)
         db.commit()
 
-        # Send Verification Email
-        v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
+        # Send Verification Email — admin-created users verify via admin frontend
+        v_link = f"{ADMIN_FRONTEND_URL}/verify-email?token={v_token}"
         EmailService.send_verification_email(new_user.email, new_user.username, v_link)
         
         log_activity(db, admin, "USER_CREATION", {"created_user": data.username, "role": new_user.role})
@@ -1356,8 +1357,8 @@ def create_org_user(data: dict, admin: User = Depends(get_current_user), db: Ses
         db.add(verify_token)
         db.commit()
 
-        # Send Verification Email
-        v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
+        # Send Verification Email — org/users created from admin portal verify via admin frontend
+        v_link = f"{ADMIN_FRONTEND_URL}/verify-email?token={v_token}"
         EmailService.send_verification_email(new_user.email, new_user.username, v_link)
         
         log_activity(db, admin, "USER_CREATION", {"created_user": username, "role_id": role_id})
@@ -1616,9 +1617,8 @@ def create_organisation(
             db.add(verify_token)
             db.commit()
 
-            # Send Verification Email
-            # Use centralized FRONTEND_URL
-            v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
+            # Send Verification Email — org admin users verify via admin frontend
+            v_link = f"{ADMIN_FRONTEND_URL}/verify-email?token={v_token}"
             with open("email_trace.log", "a") as log_file:
                 log_file.write(f"{datetime.utcnow()} - TRACE: Sending verification email to {new_user.email}...\n")
                 email_result = EmailService.send_verification_email(new_user.email, new_user.username, v_link)
