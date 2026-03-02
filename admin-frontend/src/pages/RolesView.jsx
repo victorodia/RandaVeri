@@ -9,6 +9,38 @@ import Banner from '../components/Banner';
 import { API_BASE_URL } from '../config';
 const API = API_BASE_URL;
 
+// Maps every backend permission key to a display category
+const PERMISSION_GROUPS = [
+    {
+        label: 'User Management',
+        keys: ['CREATE_USER', 'EDIT_USER', 'SUSPEND_USER', 'DELETE_USER'],
+    },
+    {
+        label: 'Finance & Reporting',
+        keys: ['VIEW_ORG_WALLET', 'VIEW_REVENUE', 'VIEW_TRANSACTIONS', 'VIEW_REPORTS'],
+    },
+    {
+        label: 'Administration',
+        keys: ['VIEW_AUDIT_LOGS', 'MANAGE_ROLES', 'MANAGE_SUBSCRIPTION', 'MANAGE_SETTINGS'],
+    },
+    {
+        label: 'Organisations',
+        keys: ['CREATE_ORGANISATION', 'EDIT_ORGANISATION', 'DELETE_ORGANISATION'],
+    },
+    {
+        label: 'Tiers',
+        keys: ['CREATE_TIER', 'EDIT_TIER', 'DELETE_TIER'],
+    },
+];
+
+const GROUP_COLORS = {
+    'User Management': 'text-status-blue',
+    'Finance & Reporting': 'text-status-emerald',
+    'Administration': 'text-status-amber',
+    'Organisations': 'text-status-cyan',
+    'Tiers': 'text-status-teal',
+};
+
 const RolesView = ({ myPermissions = [], isSuperAdmin = false }) => {
     const canManageRoles = isSuperAdmin || myPermissions.includes('MANAGE_ROLES');
 
@@ -95,37 +127,83 @@ const RolesView = ({ myPermissions = [], isSuperAdmin = false }) => {
         }
     };
 
+    // Grouped permission checklist with per-group select-all toggle
     const PermissionChecklist = ({ selected, onChange }) => (
-        <div className="grid grid-cols-1 gap-2">
-            {allPermissions.map(perm => {
-                const active = selected.includes(perm.key);
+        <div className="space-y-5">
+            {PERMISSION_GROUPS.map(group => {
+                // Only show permissions that exist in the backend catalogue
+                const groupPerms = group.keys
+                    .map(key => allPermissions.find(p => p.key === key))
+                    .filter(Boolean);
+
+                if (groupPerms.length === 0) return null;
+
+                const allSelected = groupPerms.every(p => selected.includes(p.key));
+                const someSelected = groupPerms.some(p => selected.includes(p.key));
+
+                const toggleGroup = () => {
+                    if (allSelected) {
+                        onChange(selected.filter(k => !group.keys.includes(k)));
+                    } else {
+                        const toAdd = group.keys.filter(k => !selected.includes(k));
+                        onChange([...selected, ...toAdd]);
+                    }
+                };
+
                 return (
-                    <button
-                        key={perm.key}
-                        type="button"
-                        onClick={() => onChange(
-                            active ? selected.filter(p => p !== perm.key) : [...selected, perm.key]
-                        )}
-                        className={`flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all ${active
-                            ? 'border-premium-primary bg-premium-primary/10'
-                            : 'border-premium-border bg-white/5 hover:bg-white/10'
-                            }`}
-                    >
-                        <div className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center ${active ? 'bg-premium-primary border-premium-primary' : 'border-premium-border'
-                            }`}>
-                            {active && (
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            )}
+                    <div key={group.label}>
+                        {/* Group header */}
+                        <div className="flex items-center justify-between mb-2">
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${GROUP_COLORS[group.label] || 'text-premium-secondary'}`}>
+                                {group.label}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={toggleGroup}
+                                className="text-[10px] font-bold text-premium-secondary hover:text-premium-primary transition-colors uppercase tracking-wide"
+                            >
+                                {allSelected ? 'Clear All' : 'Select All'}
+                            </button>
                         </div>
-                        <div>
-                            <div className={`text-sm font-semibold ${active ? 'text-white' : 'text-premium-text'}`}>
-                                {perm.label}
-                            </div>
-                            <div className="text-xs text-premium-secondary/70 mt-0.5">{perm.description}</div>
+
+                        {/* Permission rows */}
+                        <div className="grid grid-cols-1 gap-1.5">
+                            {groupPerms.map(perm => {
+                                const active = selected.includes(perm.key);
+                                return (
+                                    <button
+                                        key={perm.key}
+                                        type="button"
+                                        onClick={() =>
+                                            onChange(active
+                                                ? selected.filter(p => p !== perm.key)
+                                                : [...selected, perm.key]
+                                            )
+                                        }
+                                        className={`flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all ${active
+                                            ? 'border-premium-primary bg-premium-primary/10'
+                                            : 'border-premium-border bg-white/5 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        <div className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center ${active ? 'bg-premium-primary border-premium-primary' : 'border-premium-border'
+                                            }`}>
+                                            {active && (
+                                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <div className={`text-sm font-semibold ${active ? 'text-white' : 'text-premium-text'}`}>
+                                                {perm.label}
+                                            </div>
+                                            <div className="text-xs text-premium-secondary/70 mt-0.5">{perm.description}</div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
-                    </button>
+                    </div>
                 );
             })}
         </div>

@@ -11,22 +11,29 @@ import { API_BASE_URL } from '../config';
 const API = API_BASE_URL;
 
 const BADGE_COLORS = {
+    // Finance & Reporting
     VIEW_ORG_WALLET: 'bg-status-blue/20 text-status-blue',
     VIEW_REVENUE: 'bg-status-emerald/20 text-status-emerald',
     VIEW_TRANSACTIONS: 'bg-status-purple/20 text-status-purple',
-    VIEW_AUDIT_LOGS: 'bg-status-amber/20 text-status-amber',
+    VIEW_REPORTS: 'bg-status-indigo/20 text-status-indigo',
+    // User Management
     CREATE_USER: 'bg-status-emerald/20 text-status-emerald',
     EDIT_USER: 'bg-status-blue/20 text-status-blue',
     SUSPEND_USER: 'bg-status-orange/20 text-status-orange',
     DELETE_USER: 'bg-status-red/20 text-status-red',
+    // Administration
+    VIEW_AUDIT_LOGS: 'bg-status-amber/20 text-status-amber',
     MANAGE_ROLES: 'bg-status-rose/20 text-status-rose',
-    VIEW_REPORTS: 'bg-status-indigo/20 text-status-indigo',
-    CREATE_ORGANISATION: 'bg-status-cyan/20 text-status-cyan',
-    EDIT_ORGANISATION: 'bg-status-cyan/20 text-status-cyan', // Unified cyan/sky
-    DELETE_ORGANISATION: 'bg-status-red/20 text-status-red',
     MANAGE_SUBSCRIPTION: 'bg-status-purple/20 text-status-purple',
     MANAGE_SETTINGS: 'bg-status-teal/20 text-status-teal',
-    VIEW_TRANSACTIONS_ALT: 'bg-status-cyan/20 text-status-cyan',
+    // Organisations
+    CREATE_ORGANISATION: 'bg-status-cyan/20 text-status-cyan',
+    EDIT_ORGANISATION: 'bg-status-cyan/20 text-status-cyan',
+    DELETE_ORGANISATION: 'bg-status-red/20 text-status-red',
+    // Tiers
+    CREATE_TIER: 'bg-status-teal/20 text-status-teal',
+    EDIT_TIER: 'bg-status-blue/20 text-status-blue',
+    DELETE_TIER: 'bg-status-red/20 text-status-red',
 };
 
 const UsersView = ({
