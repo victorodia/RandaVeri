@@ -1509,8 +1509,8 @@ def update_org_user(user_id: int, data: dict, admin: User = Depends(get_current_
             raise HTTPException(status_code=403, detail="Access denied: MANAGE_ROLES permission required")
         user.role = ",".join(data["permissions"])
     elif "role" in data:
-        if not has_permission(admin, "EDIT_USER"):
-            raise HTTPException(status_code=403, detail="Access denied: EDIT_USER permission required")
+        if "org_admin" not in (admin.role or ""):
+            raise HTTPException(status_code=403, detail="Access denied: Organisation Admin required to change roles")
         user.role = data["role"]
 
     if "subscription_status" in data: user.subscription_status = data["subscription_status"]
