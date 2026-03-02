@@ -1731,8 +1731,8 @@ def create_organisation(
             db.add(verify_token)
             db.commit()
 
-            # Send Verification Email — org admin users verify via admin frontend
-            v_link = f"{ADMIN_FRONTEND_URL}/verify-email?token={v_token}"
+            # Send Verification Email — new org admin users verify via the frontend (they log in there)
+            v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
             with open("email_trace.log", "a") as log_file:
                 log_file.write(f"{datetime.utcnow()} - TRACE: Sending verification email to {new_user.email}...\n")
                 email_result = EmailService.send_verification_email(new_user.email, new_user.username, v_link)
