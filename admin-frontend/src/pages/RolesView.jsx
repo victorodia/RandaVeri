@@ -302,7 +302,7 @@ const RolesView = ({ myPermissions = [], isSuperAdmin = false }) => {
                         <div className="mt-6 pt-4 border-t border-premium-border/50 flex justify-between items-center text-xs text-premium-secondary">
                             <div className="flex items-center gap-1">
                                 <Info size={12} />
-                                {(role.users?.length || 0)} Users assigned
+                                {(role.user_count ?? 0)} Users assigned
                             </div>
                             {!role.is_system ? (
                                 <button

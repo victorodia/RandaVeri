@@ -741,6 +741,7 @@ def list_roles(admin: User = Depends(get_current_user), db: Session = Depends(ge
             "permissions": r.permissions or [],
             "organisation_id": r.organisation_id,
             "is_system": r.is_system or False,
+            "user_count": len(r.users) if r.users is not None else 0,
         }
         for r in roles
     ]
