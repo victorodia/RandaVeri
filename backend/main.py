@@ -1251,17 +1251,29 @@ def update_user_admin(user_id: int, data: dict, admin: User = Depends(get_curren
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    if "permissions" in data:
-        # Explicit permission list — join to comma-separated role string
+
+    if "role_id" in data:
+        rid = data["role_id"]
+        if rid:
+            role = db.query(AdminRole).filter(AdminRole.id == int(rid)).first()
+            if not role:
+                raise HTTPException(status_code=404, detail="Role not found")
+            user.role_id = role.id
+            # Clear legacy comma-separated role string to avoid conflicts
+            if user.role not in ("admin",) and "org_admin" not in (user.role or ""):
+                user.role = None
+        else:
+            user.role_id = None  # Remove role assignment
+    elif "permissions" in data:
         user.role = ",".join(data["permissions"])
     elif "role" in data:
         user.role = data["role"]
+
     if "is_active" in data: user.is_active = data["is_active"]
     if "subscription_status" in data: user.subscription_status = data["subscription_status"]
     if "ip_whitelist" in data: user.ip_whitelist = data["ip_whitelist"]
     if "organisation_id" in data: user.organisation_id = data["organisation_id"]
-    
+
     db.commit()
     log_activity(db, admin, "USER_UPDATE", {"updated_user": user.username, "changes": list(data.keys())})
     return {"message": "User updated successfully"}

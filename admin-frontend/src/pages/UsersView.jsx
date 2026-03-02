@@ -308,11 +308,6 @@ const UsersView = ({
                                                             {allPermissions.find(p => p.key === key)?.label || key}
                                                         </span>
                                                     ))}
-                                                    {canManageRoles && (
-                                                        <button onClick={() => { setEditingUser({ ...u, permissions: userPerms, role_id: u.role_id }); setIsEditModalOpen(true); }} className="p-1 hover:bg-premium-overlay rounded">
-                                                            <Edit2 size={12} className="text-premium-secondary" />
-                                                        </button>
-                                                    )}
                                                 </div>
                                             )}
                                         </td>
@@ -329,6 +324,15 @@ const UsersView = ({
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">
+                                                {canManageRoles && (
+                                                    <button
+                                                        onClick={() => { setEditingUser({ ...u, permissions: userPerms, role_id: u.role_id }); setIsEditModalOpen(true); }}
+                                                        className="p-1.5 rounded-lg hover:bg-premium-primary/20 text-premium-primary"
+                                                        title="Edit Role"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                )}
                                                 {canSuspend && (
                                                     <button
                                                         onClick={() => handleToggleUserSuspension(u)}
