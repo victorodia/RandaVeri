@@ -1351,7 +1351,9 @@ def subscribe_org(
     if not user.org:
         raise HTTPException(status_code=400, detail="User does not belong to an organisation")
         
-    price = user.org.subscription_price or DEFAULT_SUBSCRIPTION_PRICE
+    platform_config = db.query(Config).first()
+    platform_price = platform_config.subscription_price if platform_config and platform_config.subscription_price else None
+    price = platform_price or user.org.subscription_price or DEFAULT_SUBSCRIPTION_PRICE
     print(f"DEBUG: Processing subscription for Organisation ID: {user.org.id}, Plan: {plan_id}, Payment: {payment_method}")
     
     # Simulate payment processing

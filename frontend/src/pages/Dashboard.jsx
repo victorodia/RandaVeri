@@ -73,6 +73,16 @@ const Dashboard = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [topupUnits, setTopupUnits] = useState(100);
     const [topupProcessing, setTopupProcessing] = useState(false);
+    const [platformPrice, setPlatformPrice] = useState(null);
+
+    // Fetch platform subscription price from config
+    useEffect(() => {
+        axios.get(`${API_BASE_URL}/config`)
+            .then(res => setPlatformPrice(res.data.subscription_price || null))
+            .catch(() => { });
+    }, []);
+
+    const displayPrice = (platformPrice || user?.organisation?.subscription_price || 500000).toLocaleString();
 
     const handleTopup = async (e) => {
         e.preventDefault();
@@ -487,7 +497,7 @@ const Dashboard = () => {
                                         <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
                                         <>
-                                            <Shield size={20} /> Authorize & Pay ₦{user?.organisation?.subscription_price?.toLocaleString() || '500,000'}
+                                            <Shield size={20} /> Authorize & Pay ₦{displayPrice}
                                         </>
                                     )}
                                 </button>
@@ -543,7 +553,7 @@ const Dashboard = () => {
                             <>
                                 <button onClick={() => setShowPaymentModal(true)} className="btn-primary w-full py-4 text-lg font-bold shadow-2xl shadow-premium-primary/40 flex items-center justify-center gap-2">
                                     <CreditCard size={20} />
-                                    {isExpired ? `Renew Yearly Access (₦${user?.organisation?.subscription_price?.toLocaleString() || '500,000'})` : `Activate Yearly Access (₦${user?.organisation?.subscription_price?.toLocaleString() || '500,000'})`}
+                                    {isExpired ? `Renew Yearly Access (₦${displayPrice})` : `Activate Yearly Access (₦${displayPrice})`}
                                 </button>
                                 <p className="text-sm text-premium-secondary">As an **Organisation Admin**, you can authorize this payment.</p>
                             </>
