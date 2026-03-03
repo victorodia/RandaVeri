@@ -205,6 +205,12 @@ def seed_system_roles():
         ))
         db.commit()
         print("[STARTUP] DB migration: is_system column ensured on admin_roles")
+        # --- Inline DB migration: add subscription_price to system_configs ---
+        db.execute(text(
+            "ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS subscription_price FLOAT"
+        ))
+        db.commit()
+        print("[STARTUP] DB migration: subscription_price column ensured on system_configs")
         # -------------------------------------------------------------------------
 
         all_perm_keys = [p["key"] for p in ALL_PERMISSIONS]
@@ -2070,11 +2076,16 @@ def get_system_config(admin: User = Depends(get_current_platform_user), db: Sess
             org_name=PLATFORM_NAME,
             logo_url="",
             primary_color=DEFAULT_PRIMARY_COLOR,
-            secondary_color=DEFAULT_SECONDARY_COLOR
+            secondary_color=DEFAULT_SECONDARY_COLOR,
+            subscription_price=DEFAULT_SUBSCRIPTION_PRICE
         )
         db.add(config)
         db.commit()
         db.refresh(config)
+    # Populate subscription_price from env default if not yet set in DB
+    if config.subscription_price is None:
+        config.subscription_price = DEFAULT_SUBSCRIPTION_PRICE
+        db.commit()
     return config
 
 @app.get("/config")
@@ -2085,7 +2096,8 @@ def get_public_config(db: Session = Depends(get_db)):
             org_name=PLATFORM_NAME,
             logo_url="",
             primary_color=DEFAULT_PRIMARY_COLOR,
-            secondary_color=DEFAULT_SECONDARY_COLOR
+            secondary_color=DEFAULT_SECONDARY_COLOR,
+            subscription_price=DEFAULT_SUBSCRIPTION_PRICE
         )
         db.add(config)
         db.commit()
@@ -2094,7 +2106,8 @@ def get_public_config(db: Session = Depends(get_db)):
         "org_name": config.org_name,
         "logo_url": config.logo_url,
         "primary_color": config.primary_color,
-        "secondary_color": config.secondary_color
+        "secondary_color": config.secondary_color,
+        "subscription_price": config.subscription_price or DEFAULT_SUBSCRIPTION_PRICE
     }
 
 @app.put("/admin/config")
@@ -2105,12 +2118,17 @@ def update_system_config(data: dict, admin: User = Depends(get_current_platform_
     if not config:
         config = Config()
         db.add(config)
-    
+
     if "org_name" in data: config.org_name = data["org_name"]
     if "logo_url" in data: config.logo_url = data["logo_url"]
     if "primary_color" in data: config.primary_color = data["primary_color"]
     if "secondary_color" in data: config.secondary_color = data["secondary_color"]
-    
+    if "subscription_price" in data:
+        price = float(data["subscription_price"])
+        if price <= 0:
+            raise HTTPException(status_code=400, detail="Subscription price must be greater than zero")
+        config.subscription_price = price
+
     db.commit()
     return {"message": "Configuration updated successfully"}
 

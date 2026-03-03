@@ -177,6 +177,7 @@ class Config(Base):
     logo_url = Column(String)
     primary_color = Column(String)
     secondary_color = Column(String)
+    subscription_price = Column(Float, nullable=True)  # Platform default annual fee
 
 def get_db():
     db = SessionLocal()

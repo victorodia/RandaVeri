@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
-import { Layers, Plus, Edit2, Trash2, X, CheckCircle, Info } from 'lucide-react';
+import { Layers, Plus, Edit2, Trash2, X, CheckCircle, Info, CreditCard, Save } from 'lucide-react';
 import Banner from '../components/Banner';
 
 const TiersView = ({
@@ -22,6 +22,12 @@ const TiersView = ({
     const [formData, setFormData] = useState({ name: '', default_unit_cost: 1.0 });
     const [banner, setBanner] = useState({ message: '', type: 'error' });
 
+    // Subscription fee state
+    const [subPrice, setSubPrice] = useState('');
+    const [savedSubPrice, setSavedSubPrice] = useState('');
+    const [subPriceSaving, setSubPriceSaving] = useState(false);
+    const canManageSettings = isSuperAdmin || myPermissions.includes('MANAGE_SETTINGS');
+
     const fetchTiers = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -37,6 +43,15 @@ const TiersView = ({
 
     useEffect(() => {
         fetchTiers();
+        // Fetch current subscription price
+        const token = localStorage.getItem('token');
+        axios.get(`${API_BASE_URL}/admin/config`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(res => {
+                const price = res.data.subscription_price || '';
+                setSubPrice(String(price));
+                setSavedSubPrice(String(price));
+            })
+            .catch(() => { });
     }, []);
 
     const handleSubmit = async (e) => {
@@ -62,6 +77,26 @@ const TiersView = ({
         }
     };
 
+    const handleSaveSubPrice = async () => {
+        const price = parseFloat(subPrice);
+        if (!price || price <= 0) {
+            setBanner({ message: 'Please enter a valid subscription fee greater than ₦0', type: 'error' });
+            return;
+        }
+        setSubPriceSaving(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_BASE_URL}/admin/config`, { subscription_price: price }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setSavedSubPrice(String(price));
+            setBanner({ message: `Annual subscription fee updated to ₦${price.toLocaleString()}`, type: 'success' });
+        } catch (err) {
+            setBanner({ message: err.response?.data?.detail || 'Failed to update fee', type: 'error' });
+        }
+        setSubPriceSaving(false);
+    };
+
     const handleDelete = async (tierId) => {
         if (!window.confirm("Delete this tier?")) return;
         try {
@@ -83,6 +118,44 @@ const TiersView = ({
                 type={banner.type}
                 onClose={() => setBanner({ ...banner, message: '' })}
             />
+            {/* Subscription Fee Card */}
+            {canManageSettings && (
+                <div className="glass-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-premium-primary/20">
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-xl bg-premium-primary/10 flex items-center justify-center text-premium-primary flex-shrink-0">
+                            <CreditCard size={24} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-premium-text">Annual Subscription Fee</h3>
+                            <p className="text-xs text-premium-secondary mt-0.5">Default yearly licence fee charged to new organisations. Existing org fees are set individually.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-premium-secondary font-bold text-sm">₦</span>
+                            <input
+                                type="number"
+                                min="1"
+                                step="1000"
+                                className="input-field pl-8 w-48 font-bold"
+                                value={subPrice}
+                                onChange={e => setSubPrice(e.target.value)}
+                            />
+                        </div>
+                        {subPrice !== savedSubPrice && (
+                            <button
+                                onClick={handleSaveSubPrice}
+                                disabled={subPriceSaving}
+                                className="btn-primary flex items-center gap-2 px-5 py-2.5 font-bold"
+                            >
+                                <Save size={16} />
+                                {subPriceSaving ? 'Saving...' : 'Save'}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-2xl font-bold">Standard Tiers</h2>
