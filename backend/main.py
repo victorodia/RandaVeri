@@ -2599,6 +2599,48 @@ def topup_wallet(
 
 bootstrap_orgs()
 
+# ─── TEMPORARY: One-shot data wipe ──────────────────────────────────────────
+@app.delete("/admin/clear-all-data")
+def clear_all_data(data: dict, admin: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+    """
+    DESTRUCTIVE: Wipe all non-admin data. Requires Super Admin + confirmation token.
+    REMOVE THIS ENDPOINT after use.
+    """
+    if admin.role != "admin":
+        raise HTTPException(status_code=403, detail="Super Admin only")
+    if data.get("confirm") != "CLEAR_ALL_DATA_PERMANENTLY":
+        raise HTTPException(status_code=400, detail="Send {confirm: 'CLEAR_ALL_DATA_PERMANENTLY'} to proceed")
+
+    counts = {}
+
+    # 1. Tokens
+    counts["email_tokens"] = db.query(EmailVerificationToken).delete(synchronize_session=False)
+    counts["reset_tokens"] = db.query(PasswordResetToken).delete(synchronize_session=False)
+    db.commit()
+
+    # 2. Logs & Transactions
+    counts["activity_logs"] = db.query(ActivityLog).delete(synchronize_session=False)
+    counts["transactions"] = db.query(Transaction).delete(synchronize_session=False)
+    db.commit()
+
+    # 3. Wallets (all)
+    counts["wallets"] = db.query(Wallet).delete(synchronize_session=False)
+    db.commit()
+
+    # 4. Non-admin users
+    counts["users"] = db.query(User).filter(User.role != "admin").delete(synchronize_session=False)
+    db.commit()
+
+    # 5. Non-platform organisations
+    counts["organisations"] = db.query(Organisation).filter(
+        Organisation.id != PLATFORM_ORG_ID
+    ).delete(synchronize_session=False)
+    db.commit()
+
+    log_activity(db, admin, "DATA_WIPE", {"counts": counts, "note": "All non-admin data cleared"})
+    return {"message": "Data cleared successfully", "deleted": counts}
+# ─────────────────────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
