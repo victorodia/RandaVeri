@@ -14,6 +14,7 @@ export default defineConfig({
         manualChunks: {
           'vendor-lucide': ['lucide-react'],
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-canvas': ['html2canvas'],
         }
       }
     }
