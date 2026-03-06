@@ -26,7 +26,7 @@ const TiersView = ({
     const [subPrice, setSubPrice] = useState('');
     const [savedSubPrice, setSavedSubPrice] = useState('');
     const [subPriceSaving, setSubPriceSaving] = useState(false);
-    const canManageSettings = isSuperAdmin || myPermissions.includes('MANAGE_SETTINGS');
+    const canManageSettings = isSuperAdmin || myPermissions.includes('MANAGE_SUBSCRIPTION');
 
     const fetchTiers = async () => {
         try {

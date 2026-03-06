@@ -52,8 +52,7 @@ ALL_PERMISSIONS = [
     {"key": "CREATE_TIER",         "label": "Create Tier",             "description": "Create new service tiers"},
     {"key": "EDIT_TIER",           "label": "Edit Tier",               "description": "Update service tier pricing"},
     {"key": "DELETE_TIER",         "label": "Delete Tier",             "description": "Permanently delete a service tier"},
-    {"key": "MANAGE_SUBSCRIPTION", "label": "Manage Subscription",     "description": "Activate or renew yearly organisation subscription"},
-    {"key": "MANAGE_SETTINGS",     "label": "Manage System Settings",  "description": "Update platform branding, colours, and annual subscription fee"},
+    {"key": "MANAGE_SUBSCRIPTION", "label": "Manage Subscription",     "description": "Activate or renew yearly organisation subscription and set the annual subscription fee"},
 ]
 
 # Legacy permission key aliases for backward compatibility
@@ -2124,8 +2123,8 @@ def get_public_config(db: Session = Depends(get_db)):
 
 @app.put("/admin/config")
 def update_system_config(data: dict, admin: User = Depends(get_current_platform_user), db: Session = Depends(get_db)):
-    if not has_permission(admin, "MANAGE_SETTINGS"):
-        raise HTTPException(status_code=403, detail="Permission denied: MANAGE_SETTINGS required")
+    if not has_permission(admin, "MANAGE_SUBSCRIPTION"):
+        raise HTTPException(status_code=403, detail="Permission denied: MANAGE_SUBSCRIPTION required")
     config = db.query(Config).first()
     if not config:
         config = Config()
