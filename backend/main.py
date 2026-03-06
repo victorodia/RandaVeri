@@ -53,6 +53,7 @@ ALL_PERMISSIONS = [
     {"key": "EDIT_TIER",           "label": "Edit Tier",               "description": "Update service tier pricing"},
     {"key": "DELETE_TIER",         "label": "Delete Tier",             "description": "Permanently delete a service tier"},
     {"key": "MANAGE_SUBSCRIPTION", "label": "Manage Subscription",     "description": "Activate or renew yearly organisation subscription"},
+    {"key": "MANAGE_SETTINGS",     "label": "Manage System Settings",  "description": "Update platform branding, colours, and annual subscription fee"},
 ]
 
 # Legacy permission key aliases for backward compatibility
@@ -601,6 +602,12 @@ def get_me(user: User = Depends(get_current_user)):
     is_org_admin = ("org_admin" in role_str)
     is_system_role = bool(user.admin_role and user.admin_role.is_system)
     
+    # Super admins and system-role users get all platform permissions — same bypass as has_permission()
+    if is_super_admin or is_system_role:
+        effective_perms = platform_keys
+    else:
+        effective_perms = all_user_perms & platform_keys
+
     # A user is a platform user if they belong to the platform owner organisation (ID 1) 
     # AND (are super-admin, or hold a system role, or have at least one assigned platform key)
     is_platform_user = (user.organisation_id == PLATFORM_ORG_ID) and (
@@ -620,7 +627,7 @@ def get_me(user: User = Depends(get_current_user)):
         "role": user.role,
         "is_system_role": is_system_role,
         "is_platform_user": is_platform_user,
-        "permissions": sorted(all_user_perms & platform_keys),
+        "permissions": sorted(effective_perms),
         "ip_whitelist": user.ip_whitelist,
         "is_active": user.is_active,
         "is_password_change_required": user.is_password_change_required,
