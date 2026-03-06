@@ -25,7 +25,7 @@ const PERMISSION_GROUPS = [
     },
     {
         label: 'Organisations',
-        keys: ['CREATE_ORGANISATION', 'EDIT_ORGANISATION', 'DELETE_ORGANISATION'],
+        keys: ['CREATE_ORGANISATION', 'EDIT_ORGANISATION', 'SUSPEND_ORGANISATION', 'DELETE_ORGANISATION'],
     },
     {
         label: 'Tiers',

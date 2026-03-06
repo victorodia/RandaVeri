@@ -16,6 +16,7 @@ const OrganisationsView = ({
 }) => {
     const canCreate = isSuperAdmin || myPermissions.includes('CREATE_ORGANISATION');
     const canEdit = isSuperAdmin || myPermissions.includes('EDIT_ORGANISATION');
+    const canSuspend = isSuperAdmin || myPermissions.includes('SUSPEND_ORGANISATION');
     const canDelete = isSuperAdmin || myPermissions.includes('DELETE_ORGANISATION');
     const canViewWallet = isSuperAdmin || myPermissions.includes('VIEW_ORG_WALLET');
 
@@ -275,15 +276,17 @@ const OrganisationsView = ({
                                 {org.logo_url ? <img src={org.logo_url} className="h-full w-full object-contain" /> : <Building2 size={24} className="text-premium-secondary" />}
                             </div>
                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {canEdit && org.slug !== 'default' && (
+                                {(canEdit || canSuspend) && org.slug !== 'default' && (
                                     <>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleToggleSuspension(org); }}
-                                            className={`p-2 rounded-lg ${org.is_suspended ? 'hover:bg-green-500/10 text-green-400' : 'hover:bg-yellow-500/10 text-yellow-400'}`}
-                                            title={org.is_suspended ? 'Activate' : 'Suspend'}
-                                        >
-                                            {org.is_suspended ? <Play size={18} /> : <Pause size={18} />}
-                                        </button>
+                                        {canSuspend && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleToggleSuspension(org); }}
+                                                className={`p-2 rounded-lg ${org.is_suspended ? 'hover:bg-green-500/10 text-green-400' : 'hover:bg-yellow-500/10 text-yellow-400'}`}
+                                                title={org.is_suspended ? 'Activate' : 'Suspend'}
+                                            >
+                                                {org.is_suspended ? <Play size={18} /> : <Pause size={18} />}
+                                            </button>
+                                        )}
                                         {canDelete && (
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleDeleteOrganisation(org); }}

@@ -48,6 +48,7 @@ ALL_PERMISSIONS = [
     {"key": "VIEW_REPORTS",        "label": "View Reports",            "description": "View analytics and reports"},
     {"key": "CREATE_ORGANISATION", "label": "Create Organisation",     "description": "Create new organisation workspaces"},
     {"key": "EDIT_ORGANISATION",   "label": "Edit Organisation",       "description": "Update organisation branding and details"},
+    {"key": "SUSPEND_ORGANISATION","label": "Suspend / Activate Organisation", "description": "Suspend or reactivate an organisation and all its users"},
     {"key": "DELETE_ORGANISATION", "label": "Delete Organisation",     "description": "Permanently delete an organisation"},
     {"key": "CREATE_TIER",         "label": "Create Tier",             "description": "Create new service tiers"},
     {"key": "EDIT_TIER",           "label": "Edit Tier",               "description": "Update service tier pricing"},
@@ -1882,8 +1883,8 @@ def delete_organisation(org_id: int, data: dict, admin: User = Depends(get_curre
 
 @app.post("/admin/organisations/{org_id}/toggle-suspension")
 def toggle_organisation_suspension(org_id: int, data: dict, admin: User = Depends(get_current_platform_user), db: Session = Depends(get_db)):
-    if not has_permission(admin, "EDIT_ORGANISATION"):
-        raise HTTPException(status_code=403, detail="Permission denied")
+    if not has_permission(admin, "SUSPEND_ORGANISATION"):
+        raise HTTPException(status_code=403, detail="Permission denied: SUSPEND_ORGANISATION required")
     
     password = data.get("password")
     if not password or not verify_password(password, admin.hashed_password):
