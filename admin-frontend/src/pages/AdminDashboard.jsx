@@ -23,7 +23,7 @@ const AdminDashboard = () => {
 
     // Determine which tabs this user can see
     const perms = new Set(user?.permissions || []);
-    const isSuperAdmin = user?.role === 'admin';
+    const isSuperAdmin = user?.role === 'admin' || user?.is_system_role === true;
     const canManageRoles = perms.has('MANAGE_ROLES');
 
     const TAB_ACCESS = [

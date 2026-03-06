@@ -599,11 +599,13 @@ def get_me(user: User = Depends(get_current_user)):
     # 3. Handle System Admins (Super Admin and Org Admins)
     is_super_admin = (user.role == "admin")
     is_org_admin = ("org_admin" in role_str)
+    is_system_role = bool(user.admin_role and user.admin_role.is_system)
     
     # A user is a platform user if they belong to the platform owner organisation (ID 1) 
-    # AND (are super-admin, or have at least one assigned platform key)
+    # AND (are super-admin, or hold a system role, or have at least one assigned platform key)
     is_platform_user = (user.organisation_id == PLATFORM_ORG_ID) and (
         is_super_admin or 
+        is_system_role or
         bool(all_user_perms & platform_keys)
     )
 
@@ -616,6 +618,7 @@ def get_me(user: User = Depends(get_current_user)):
         "units": user.org.wallet.balance_units if user.org and user.org.wallet else 0,
         "subscription": user.subscription_status,
         "role": user.role,
+        "is_system_role": is_system_role,
         "is_platform_user": is_platform_user,
         "permissions": sorted(all_user_perms & platform_keys),
         "ip_whitelist": user.ip_whitelist,
@@ -1253,7 +1256,10 @@ def list_users(admin: User = Depends(get_current_platform_user), db: Session = D
     return result
 
 @app.put("/admin/users/{user_id}")
-def update_user_admin(user_id: int, data: dict, admin: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def update_user_admin(user_id: int, data: dict, admin: User = Depends(get_current_platform_user), db: Session = Depends(get_db)):
+    # Verify the requesting user has at least one of the relevant edit permissions
+    if not any(has_permission(admin, p) for p in ["EDIT_USER", "MANAGE_ROLES", "SUSPEND_USER"]):
+        raise HTTPException(status_code=403, detail="Access denied: insufficient permissions to edit users")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -1666,9 +1672,6 @@ def create_organisation(
 ):
     if not has_permission(admin, "CREATE_ORGANISATION"):
         raise HTTPException(status_code=403, detail="Permission denied: CREATE_ORGANISATION required")
-    # Enforce Super Admin only (redundant with get_current_admin_user but good for clarity)
-    if admin.role != "admin":
-        raise HTTPException(status_code=403, detail="Only Super Admins can create organisations")
 
     # 1. Validation Checks (Fail fast)
     if db.query(Organisation).filter(Organisation.name == name).first():
