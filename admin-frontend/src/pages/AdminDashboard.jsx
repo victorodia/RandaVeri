@@ -118,6 +118,21 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleAdjustWallet = async (userId, units) => {
+        try {
+            await axios.post(`${API_BASE_URL}/admin/adjust-wallet/${userId}?units=${units}`, {}, { headers });
+            fetchData();
+            return true;
+        } catch (err) {
+            showDialog({
+                type: 'error',
+                title: 'Action Failed',
+                message: err.response?.data?.detail || "Action failed"
+            });
+            return false;
+        }
+    };
+
     const handleToggleUserSuspension = async (userId, password) => {
         try {
             await axios.post(`${API_BASE_URL}/admin/users/${userId}/toggle-suspension`, { password }, { headers });
@@ -347,6 +362,8 @@ const AdminDashboard = () => {
                         {activeTab === 'users' && <UsersView
                             users={users}
                             onUpdateUser={handleUpdateUser}
+                            onBulkAction={handleBulkAction}
+                            onAdjustWallet={handleAdjustWallet}
                             onToggleSuspension={handleToggleUserSuspension}
                             myPermissions={Array.from(perms)}
                             isSuperAdmin={isSuperAdmin}

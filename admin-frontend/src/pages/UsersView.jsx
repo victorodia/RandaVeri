@@ -12,15 +12,13 @@ const API = API_BASE_URL;
 
 const BADGE_COLORS = {
     // Finance & Reporting
-    VIEW_ORG_WALLET: 'bg-status-blue/20 text-status-blue',
-    VIEW_REVENUE: 'bg-status-emerald/20 text-status-emerald',
-    VIEW_TRANSACTIONS: 'bg-status-purple/20 text-status-purple',
-    VIEW_REPORTS: 'bg-status-indigo/20 text-status-indigo',
-    // User Management
-    CREATE_USER: 'bg-status-emerald/20 text-status-emerald',
-    EDIT_USER: 'bg-status-blue/20 text-status-blue',
     SUSPEND_USER: 'bg-status-orange/20 text-status-orange',
     DELETE_USER: 'bg-status-red/20 text-status-red',
+    BULK_USER_ACTIONS: 'bg-status-indigo/20 text-status-indigo',
+    // Finance & Reporting
+    VIEW_ORG_WALLET: 'bg-status-blue/20 text-status-blue',
+    ADJUST_WALLET: 'bg-status-emerald/20 text-status-emerald',
+    VIEW_REVENUE: 'bg-status-emerald/20 text-status-emerald',
     // Administration
     VIEW_AUDIT_LOGS: 'bg-status-amber/20 text-status-amber',
     MANAGE_ROLES: 'bg-status-rose/20 text-status-rose',
@@ -40,6 +38,7 @@ const UsersView = ({
     users = [],
     onUpdateUser,
     onBulkAction,
+    onAdjustWallet,
     onToggleSuspension,
     myPermissions = [],
     isSuperAdmin = false
@@ -49,6 +48,8 @@ const UsersView = ({
     const canManageRoles = isSuperAdmin || myPermissions.includes('MANAGE_ROLES');
     const canSuspend = isSuperAdmin || myPermissions.includes('SUSPEND_USER');
     const canDelete = isSuperAdmin || myPermissions.includes('DELETE_USER');
+    const canBulk = isSuperAdmin || myPermissions.includes('BULK_USER_ACTIONS');
+    const canAdjust = isSuperAdmin || myPermissions.includes('ADJUST_WALLET');
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -107,7 +108,9 @@ const UsersView = ({
     // ── Modal State ─────────────────────────────────────────────
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isAdjustWalletModalOpen, setIsAdjustWalletModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
+    const [walletUnits, setWalletUnits] = useState(0);
 
     const emptyNew = { username: '', email: '', telephone: '', password: '', permissions: [], role_id: null };
     const [newUser, setNewUser] = useState(emptyNew);
@@ -179,6 +182,32 @@ const UsersView = ({
         }
     };
 
+    const handleHandleBulkAction = (action) => {
+        if (!onBulkAction) return;
+
+        let units = 0;
+        const msg = action === 'topup' ? 'enter units to add to all selected users' : `are you sure you want to ${action} all selected users?`;
+
+        showDialog({
+            type: action === 'topup' ? 'input' : 'confirm',
+            title: 'Bulk Action',
+            message: `You have selected ${selectedUsers.length} users. ${msg}`,
+            confirmText: 'Execute Action',
+            placeholder: 'Units (e.g. 1000)',
+            inputType: 'number',
+            onConfirm: async (val) => {
+                if (action === 'topup') {
+                    units = parseInt(val);
+                    if (isNaN(units) || units === 0) return;
+                }
+                await onBulkAction(selectedUsers, action, units);
+                setSelectedUsers([]);
+                showDialog({ type: 'success', title: 'Action Complete', message: 'Bulk action executed successfully. Dashboard is refreshing...' });
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        });
+    };
+
     const handleToggleUserSuspension = (user) => {
         const action = user.is_active ? 'Suspend' : 'Activate';
         showDialog({
@@ -204,6 +233,20 @@ const UsersView = ({
         });
     };
 
+    const handleWalletAdjustment = async () => {
+        if (!onAdjustWallet || !editingUser) return;
+        const success = await onAdjustWallet(editingUser.id, walletUnits);
+        if (success) {
+            setIsAdjustWalletModalOpen(false);
+            showDialog({
+                type: 'success',
+                title: 'Wallet Adjusted',
+                message: `Successfully adjusted wallet for ${editingUser.username}.`
+            });
+            setTimeout(() => window.location.reload(), 1000);
+        }
+    };
+
     const PermissionPreview = ({ selected }) => (
         <div className="flex flex-wrap gap-2">
             {selected.length === 0 ? (
@@ -224,26 +267,35 @@ const UsersView = ({
     return (
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
             {/* Toolbar */}
-            <div className="glass-card p-4 flex flex-wrap justify-between items-center gap-4 bg-premium-overlay">
-                <div className="flex items-center gap-4">
-                    <button onClick={toggleSelectAll} className="flex items-center gap-2 text-sm text-premium-secondary hover:text-premium-text">
-                        {selectedUsers.length === filteredUsers.length ? <CheckSquare size={20} /> : <Square size={20} />}
-                        Select All
+            <div className="glass-card p-4 flex flex-wrap justify-between items-center gap-4 bg-premium-overlay border-b-2 border-premium-primary/20">
+                <div className="flex items-center gap-6">
+                    <button onClick={toggleSelectAll} className="flex items-center gap-2 text-sm text-premium-secondary hover:text-premium-text transition-colors">
+                        {selectedUsers.length === filteredUsers.length && filteredUsers.length > 0 ? <CheckSquare size={20} className="text-premium-primary" /> : <Square size={20} />}
+                        <span className="font-bold">{selectedUsers.length} Selected</span>
                     </button>
+
+                    {selectedUsers.length > 0 && canBulk && (
+                        <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
+                            <div className="h-6 w-[1px] bg-premium-border mx-2" />
+                            <button onClick={() => handleHandleBulkAction('activate')} className="px-3 py-1.5 rounded-lg bg-status-emerald/10 text-status-emerald text-xs font-bold hover:bg-status-emerald/20 transition-colors uppercase tracking-wider">Activate</button>
+                            <button onClick={() => handleHandleBulkAction('block')} className="px-3 py-1.5 rounded-lg bg-status-red/10 text-status-red text-xs font-bold hover:bg-status-red/20 transition-colors uppercase tracking-wider">Suspend</button>
+                            <button onClick={() => handleHandleBulkAction('topup')} className="px-3 py-1.5 rounded-lg bg-premium-primary/10 text-premium-primary text-xs font-bold hover:bg-premium-primary/20 transition-colors uppercase tracking-wider">Bulk Topup</button>
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-premium-secondary" />
                         <input
                             type="text"
-                            placeholder="Search users..."
-                            className="input-field pl-9 py-2 text-sm w-56"
+                            placeholder="Search by name or email..."
+                            className="input-field pl-9 py-2 text-sm w-64"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                     {canCreate && (
-                        <button onClick={() => { setNewUser(emptyNew); setIsCreateModalOpen(true); }} className="btn-primary flex items-center gap-2 py-2 px-4 text-sm">
+                        <button onClick={() => { setNewUser(emptyNew); setIsCreateModalOpen(true); }} className="btn-primary flex items-center gap-2 py-2 px-6 text-sm">
                             <Plus size={16} /> New User
                         </button>
                     )}
@@ -324,6 +376,15 @@ const UsersView = ({
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">
+                                                {canAdjust && (
+                                                    <button
+                                                        onClick={() => { setEditingUser(u); setWalletUnits(0); setIsAdjustWalletModalOpen(true); }}
+                                                        className="p-1.5 rounded-lg hover:bg-status-emerald/20 text-status-emerald"
+                                                        title="Adjust Wallet"
+                                                    >
+                                                        <Plus size={18} />
+                                                    </button>
+                                                )}
                                                 {canManageRoles && (
                                                     <button
                                                         onClick={() => { setEditingUser({ ...u, permissions: userPerms, role_id: u.role_id }); setIsEditModalOpen(true); }}
@@ -425,6 +486,34 @@ const UsersView = ({
                             <div className="flex gap-4 pt-2">
                                 <button onClick={() => setIsEditModalOpen(false)} className="btn-secondary flex-1">Cancel</button>
                                 <button onClick={handleSavePermissions} className="btn-primary flex-1">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {isAdjustWalletModalOpen && editingUser && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="glass-card max-w-sm w-full p-8 space-y-6">
+                        <div className="text-center space-y-2">
+                            <Plus className="text-status-emerald mx-auto" size={48} />
+                            <h3 className="text-xl font-bold">Adjust Wallet</h3>
+                            <p className="text-sm text-premium-secondary">Enter units to add or subtract for <span className="text-premium-text font-bold">{editingUser.username}</span>'s organisation.</p>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs text-premium-secondary uppercase font-bold">Units to Adjustment</label>
+                                <input
+                                    type="number"
+                                    className="input-field w-full text-center text-xl font-bold"
+                                    placeholder="e.g. 5000"
+                                    value={walletUnits}
+                                    onChange={e => setWalletUnits(parseInt(e.target.value))}
+                                />
+                                <p className="text-[10px] text-premium-secondary text-center">Use negative numbers to subtract units.</p>
+                            </div>
+                            <div className="flex gap-4 pt-2">
+                                <button onClick={() => setIsAdjustWalletModalOpen(false)} className="btn-secondary flex-1">Cancel</button>
+                                <button onClick={handleWalletAdjustment} className="btn-primary flex-1">Apply</button>
                             </div>
                         </div>
                     </div>

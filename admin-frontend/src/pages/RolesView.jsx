@@ -13,11 +13,11 @@ const API = API_BASE_URL;
 const PERMISSION_GROUPS = [
     {
         label: 'User Management',
-        keys: ['CREATE_USER', 'EDIT_USER', 'SUSPEND_USER', 'DELETE_USER'],
+        keys: ['CREATE_USER', 'EDIT_USER', 'SUSPEND_USER', 'DELETE_USER', 'BULK_USER_ACTIONS'],
     },
     {
         label: 'Finance & Reporting',
-        keys: ['VIEW_ORG_WALLET', 'VIEW_REVENUE', 'VIEW_TRANSACTIONS', 'VIEW_REPORTS'],
+        keys: ['VIEW_ORG_WALLET', 'ADJUST_WALLET', 'VIEW_REVENUE', 'VIEW_TRANSACTIONS', 'VIEW_REPORTS'],
     },
     {
         label: 'Administration',

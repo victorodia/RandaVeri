@@ -37,6 +37,7 @@ print("BACKEND RELOADED - Security Patch Applied")
 # ──────────────────────────────────────────────────────────────
 ALL_PERMISSIONS = [
     {"key": "VIEW_ORG_WALLET",     "label": "View Organisation Units",  "description": "View the organisation wallet balance and usage stats"},
+    {"key": "ADJUST_WALLET",       "label": "Adjust Wallet Balance",   "description": "Add or remove units from an organisation wallet"},
     {"key": "VIEW_REVENUE",        "label": "View Platform Revenue",   "description": "View total revenue and breakdown by organisation"},
     {"key": "VIEW_TRANSACTIONS",   "label": "View Transactions",       "description": "View transaction & verification history"},
     {"key": "VIEW_AUDIT_LOGS",     "label": "View Audit Logs",         "description": "View the full organisation-wide audit trail"},
@@ -44,6 +45,7 @@ ALL_PERMISSIONS = [
     {"key": "EDIT_USER",           "label": "Edit Users",              "description": "Edit user profile and details"},
     {"key": "SUSPEND_USER",        "label": "Suspend / Activate Users","description": "Suspend or reactivate user accounts"},
     {"key": "DELETE_USER",         "label": "Delete Users",            "description": "Permanently delete a user"},
+    {"key": "BULK_USER_ACTIONS",   "label": "Bulk User Actions",      "description": "Suspend, reactivate or topup multiple users at once"},
     {"key": "MANAGE_ROLES",        "label": "Manage Permissions",      "description": "Change permission assignments for other users"},
     {"key": "VIEW_REPORTS",        "label": "View Reports",            "description": "View analytics and reports"},
     {"key": "CREATE_ORGANISATION", "label": "Create Organisation",     "description": "Create new organisation workspaces"},
@@ -1930,8 +1932,8 @@ def get_public_organisation(slug: str, db: Session = Depends(get_db)):
 
 @app.post("/admin/adjust-wallet/{user_id}")
 def adjust_wallet(user_id: int, units: int, admin: User = Depends(get_current_platform_user), db: Session = Depends(get_db)):
-    if not has_permission(admin, "VIEW_WALLET"):
-        raise HTTPException(status_code=403, detail="Permission denied: VIEW_WALLET required")
+    if not has_permission(admin, "ADJUST_WALLET"):
+        raise HTTPException(status_code=403, detail="Permission denied: ADJUST_WALLET required")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -2366,7 +2368,9 @@ def get_extended_analytics(admin: User = Depends(get_current_platform_user), db:
     }
 
 @app.post("/admin/users/bulk")
-def bulk_update_users(data: dict, admin: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def bulk_update_users(data: dict, admin: User = Depends(get_current_platform_user), db: Session = Depends(get_db)):
+    if not has_permission(admin, "BULK_USER_ACTIONS"):
+        raise HTTPException(status_code=403, detail="Permission denied: BULK_USER_ACTIONS required")
     user_ids = data.get("user_ids", [])
     action = data.get("action") # "activate", "block", "topup"
     units = data.get("units", 0)
