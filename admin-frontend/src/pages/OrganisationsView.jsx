@@ -312,7 +312,15 @@ const OrganisationsView = ({
                             </div>
                             <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-premium-secondary">
                                 <span className="text-premium-accent">{org.slug}</span>
-                                <span className="bg-premium-primary/10 text-premium-primary px-2 py-0.5 rounded border border-premium-primary/20">{org.tier_name || 'Standard'}</span>
+                                <div className="flex gap-2">
+                                    <span className={`px-2 py-0.5 rounded border ${org.subscription_status === 'active' && (!org.subscription_expiry || new Date(org.subscription_expiry) > new Date())
+                                            ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20'
+                                            : 'bg-status-red/10 text-status-red border-status-red/20'
+                                        }`}>
+                                        {org.subscription_status === 'active' && (!org.subscription_expiry || new Date(org.subscription_expiry) > new Date()) ? 'Active' : 'Expired'}
+                                    </span>
+                                    <span className="bg-premium-primary/10 text-premium-primary px-2 py-0.5 rounded border border-premium-primary/20">{org.tier_name || 'Standard'}</span>
+                                </div>
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -332,6 +340,18 @@ const OrganisationsView = ({
                                     </div>
                                 </div>
                             )}
+                            <div className="grid grid-cols-2 gap-3 pb-3">
+                                <div className="space-y-1">
+                                    <p className="text-[8px] text-premium-secondary uppercase font-bold text-center">Subscribed</p>
+                                    <p className="text-[10px] font-mono text-center">{org.subscription_date ? new Date(org.subscription_date).toLocaleDateString() : 'N/A'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[8px] text-premium-secondary uppercase font-bold text-center">Expires</p>
+                                    <p className={`text-[10px] font-mono text-center ${(!org.subscription_expiry || new Date(org.subscription_expiry) > new Date()) ? '' : 'text-status-red font-bold'}`}>
+                                        {org.subscription_expiry ? new Date(org.subscription_expiry).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
                             <div className="text-[10px] text-premium-secondary flex items-center gap-1"><Globe size={10} /> {org.slug}.randamobile.com</div>
                             <div className="text-[10px] text-premium-accent font-bold uppercase flex items-center gap-1"><Shield size={10} /> {org.admin_username || 'No Admin'}</div>
                         </div>

@@ -4,7 +4,7 @@ import {
     Wallet, Activity, Search, LogOut, LayoutDashboard, History,
     FileText, Palette, Shield, Users, CreditCard,
     CheckCircle, XCircle, Lock, Zap, ArrowUpCircle, TrendingUp, TrendingDown, Filter, Plus,
-    Printer, Download, Edit2, ChevronDown, ChevronUp
+    Printer, Download, Edit2, ChevronDown, ChevronUp, Menu as MenuIcon, X as CloseIcon, Upload
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import VerificationSlip from '../components/VerificationSlip';
@@ -23,6 +23,58 @@ const Dashboard = () => {
     const [nin, setNin] = useState('');
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [logoFile, setLogoFile] = useState(null);
+    const [logoPreview, setLogoPreview] = useState(branding.logoUrl);
+    const [isSavingBranding, setIsSavingBranding] = useState(false);
+
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleSaveBranding = async () => {
+        setIsSavingBranding(true);
+        try {
+            const formData = new FormData();
+            formData.append('name', branding.name);
+            formData.append('primary_color', branding.primaryColor || '#3B82F6');
+            formData.append('secondary_color', branding.secondaryColor || '#64748B');
+            if (logoFile) {
+                formData.append('logo', logoFile);
+            }
+
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_BASE_URL}/org/branding`, formData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            showDialog({
+                type: 'success',
+                title: 'Branding Updated',
+                message: 'Organisation branding has been updated successfully.'
+            });
+
+            // Refresh branding in context
+            if (branding.orgSlug) {
+                // Refresh the page to apply new styles and logo globally
+                window.location.reload();
+            }
+        } catch (err) {
+            showDialog({
+                type: 'error',
+                title: 'Update Failed',
+                message: err.response?.data?.detail || 'Failed to update branding settings.'
+            });
+        } finally {
+            setIsSavingBranding(false);
+        }
+    };
 
     const handleLogout = async () => {
         await logout();
@@ -56,6 +108,7 @@ const Dashboard = () => {
     const [endDate, setEndDate] = useState('');
     const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
     const ITEMS_PER_PAGE = 10;
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { showDialog, setDialogPassword } = useDialog();
     const slipRef = React.useRef(null);
 
@@ -207,8 +260,8 @@ const Dashboard = () => {
     };
 
     const FilterBar = () => (
-        <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-premium-overlay/30 rounded-xl border border-premium-border/50">
-            <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-6 p-3 sm:p-4 bg-premium-overlay/30 rounded-xl border border-premium-border/50">
+            <div className="flex items-center gap-2 sm:gap-3">
                 <Filter size={14} className="text-premium-primary" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-premium-secondary">Filter by Date</span>
             </div>
@@ -391,7 +444,14 @@ const Dashboard = () => {
     }, [user]);
 
     return (
-        <div className="flex min-h-screen bg-premium-bg">
+        <div className="relative flex flex-col lg:flex-row min-h-screen bg-premium-bg">
+            {/* Mobile Sidebar Backdrop */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
             {/* Topup Modal */}
             {showTopupModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -573,37 +633,49 @@ const Dashboard = () => {
             ) : (
                 <>
                     {/* Sidebar */}
-                    <div className="w-64 border-r border-premium-border bg-premium-surface p-6 flex flex-col">
-                        <div className="flex items-center gap-3 mb-10 overflow-hidden">
-                            {branding.logoUrl ? (
-                                <div className="h-10 w-10 flex-shrink-0 bg-premium-primary/10 rounded-xl overflow-hidden flex items-center justify-center border border-premium-primary/20">
-                                    <img
-                                        src={branding.logoUrl}
-                                        alt={branding.name}
-                                        className="h-full w-full object-contain"
-                                    />
+                    <aside className={`
+                        fixed inset-y-0 left-0 z-50 w-64 border-r border-premium-border bg-premium-surface p-6 flex flex-col
+                        transform transition-transform duration-300 lg:relative lg:translate-x-0
+                        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                    `}>
+                        <div className="flex items-center justify-between mb-10 overflow-hidden">
+                            <div className="flex items-center gap-3">
+                                {branding.logoUrl ? (
+                                    <div className="h-10 w-10 flex-shrink-0 bg-premium-primary/10 rounded-xl overflow-hidden flex items-center justify-center border border-premium-primary/20">
+                                        <img
+                                            src={branding.logoUrl}
+                                            alt={branding.name}
+                                            className="h-full w-full object-contain"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="h-10 w-10 flex-shrink-0 premium-gradient rounded-xl flex items-center justify-center shadow-sm">
+                                        <span className="font-bold text-lg text-white">{branding.logoText || (branding.name ? branding.name.charAt(0) : 'R')}</span>
+                                    </div>
+                                )}
+                                <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="font-bold text-lg tracking-tight truncate">{branding.name}</span>
                                 </div>
-                            ) : (
-                                <div className="h-10 w-10 flex-shrink-0 premium-gradient rounded-xl flex items-center justify-center shadow-sm">
-                                    <span className="font-bold text-lg text-white">{branding.logoText || (branding.name ? branding.name.charAt(0) : 'R')}</span>
-                                </div>
-                            )}
-                            <div className="flex flex-col min-w-0 flex-1">
-                                <span className="font-bold text-lg tracking-tight truncate">{branding.name}</span>
                             </div>
+                            <button
+                                onClick={() => setIsSidebarOpen(false)}
+                                className="lg:hidden p-2 text-premium-secondary hover:text-premium-text"
+                            >
+                                <CloseIcon size={20} />
+                            </button>
                         </div>
 
                         <nav className="flex-1 space-y-2">
                             {(user?.role?.includes('admin') || user?.role?.includes('IDENTITY')) && (
-                                <NavItem icon={<LayoutDashboard size={20} />} label="Verification" active={activeTab === 'verify'} onClick={() => setActiveTab('verify')} />
+                                <NavItem icon={<LayoutDashboard size={20} />} label="Verification" active={activeTab === 'verify'} onClick={() => { setActiveTab('verify'); setIsSidebarOpen(false); }} />
                             )}
                             {(user?.role?.includes('admin') || user?.role?.includes('WALLET')) && (
-                                <NavItem icon={<History size={20} />} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
+                                <NavItem icon={<History size={20} />} label="History" active={activeTab === 'history'} onClick={() => { setActiveTab('history'); setIsSidebarOpen(false); }} />
                             )}
                             {(user?.role?.includes('org_admin')) && (
-                                <NavItem icon={<Users size={20} />} label="Team" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
+                                <NavItem icon={<Users size={20} />} label="Team" active={activeTab === 'team'} onClick={() => { setActiveTab('team'); setIsSidebarOpen(false); }} />
                             )}
-                            <NavItem icon={<FileText size={20} />} label="Audit Logs" active={activeTab === 'audit'} onClick={() => setActiveTab('audit')} />
+                            <NavItem icon={<FileText size={20} />} label="Audit Logs" active={activeTab === 'audit'} onClick={() => { setActiveTab('audit'); setIsSidebarOpen(false); }} />
                             {/* ONLY Super Admin sees Control Center */}
                             {user?.role === 'admin' && (
                                 <Link to="/admin" className="w-full flex items-center gap-3 p-3 rounded-lg text-premium-accent hover:text-premium-text hover:bg-premium-overlay transition-all mt-4 border border-premium-accent/20">
@@ -617,58 +689,66 @@ const Dashboard = () => {
                             <LogOut size={20} />
                             <span>Logout</span>
                         </button>
-                    </div>
+                    </aside>
 
                     {/* Main Content */}
-                    <div className="flex-1 p-8 overflow-y-auto">
-                        <header className="flex justify-between items-center mb-10">
-                            <div>
-                                <h1 className="text-2xl font-bold">Welcome back, {user?.username}</h1>
-                                <p className="text-premium-secondary">Manage your NIN validations and wallet balance.</p>
+                    <main className="flex-1 p-4 lg:p-8 overflow-y-auto w-full">
+                        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 sm:mb-10">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setIsSidebarOpen(true)}
+                                    className="lg:hidden p-2 bg-premium-surface border border-premium-border rounded-lg text-premium-secondary"
+                                >
+                                    <MenuIcon size={24} />
+                                </button>
+                                <div>
+                                    <h1 className="text-xl sm:text-2xl font-bold">Welcome back, {user?.username}</h1>
+                                    <p className="text-sm text-premium-secondary">Manage your NIN validations and wallet balance.</p>
+                                </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <div className="glass-card flex items-center gap-4 py-3 px-6">
-                                    <div className="h-10 w-10 rounded-full bg-premium-primary/20 text-premium-primary flex items-center justify-center">
-                                        <Wallet size={20} />
+                            <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-2 sm:pb-0">
+                                <div className="glass-card flex items-center gap-3 sm:gap-4 py-2 sm:py-3 px-4 sm:px-6 whitespace-nowrap">
+                                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-premium-primary/20 text-premium-primary flex items-center justify-center shrink-0">
+                                        <Wallet size={18} />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-premium-secondary uppercase">Organisation Balance</p>
-                                        <div className="flex items-center gap-3">
-                                            <p className="text-lg font-bold">{user?.units} Units</p>
+                                        <p className="text-[10px] sm:text-xs text-premium-secondary uppercase">Balance</p>
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <p className="text-sm sm:text-lg font-bold">{user?.units} Units</p>
                                             {isOrgAdmin && (
                                                 <button
                                                     onClick={() => setShowTopupModal(true)}
-                                                    className="p-1.5 bg-premium-primary/20 text-premium-primary hover:bg-premium-primary hover:text-premium-text rounded-lg transition-all"
+                                                    className="p-1 sm:p-1.5 bg-premium-primary/20 text-premium-primary hover:bg-premium-primary hover:text-premium-text rounded-lg transition-all"
                                                     title="Top-up Units"
                                                 >
-                                                    <Plus size={16} />
+                                                    <Plus size={14} />
                                                 </button>
                                             )}
                                         </div>
                                     </div>
                                 </div>
-
-
-                                <ThemeToggle />
+                                <div className="shrink-0">
+                                    <ThemeToggle />
+                                </div>
                             </div>
                         </header>
 
                         {activeTab === 'verify' && (user?.role?.includes('admin') || user?.role?.includes('IDENTITY')) && (
                             <div className="space-y-6">
                                 {/* Sub-tabs for Verification */}
-                                <div className="flex gap-1 bg-premium-overlay p-1 rounded-xl w-fit mb-8">
+                                <div className="flex gap-1 bg-premium-overlay p-1 rounded-xl w-full sm:w-fit mb-6 sm:mb-8 overflow-x-auto">
                                     <button
                                         onClick={() => setSubTab('form')}
-                                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${subTab === 'form' ? 'bg-premium-primary text-white shadow-lg' : 'text-premium-secondary hover:text-premium-text'}`}
+                                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${subTab === 'form' ? 'bg-premium-primary text-white shadow-lg' : 'text-premium-secondary hover:text-premium-text'}`}
                                     >
                                         Verify Now
                                     </button>
                                     <button
                                         onClick={() => setSubTab('logs')}
-                                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${subTab === 'logs' ? 'bg-premium-primary text-white shadow-lg' : 'text-premium-secondary hover:text-premium-text'}`}
+                                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${subTab === 'logs' ? 'bg-premium-primary text-white shadow-lg' : 'text-premium-secondary hover:text-premium-text'}`}
                                     >
-                                        Verification Logs
+                                        Logs
                                     </button>
                                 </div>
 
@@ -698,8 +778,8 @@ const Dashboard = () => {
 
                                         {result && (
                                             <div className="glass-card animate-in fade-in slide-in-from-bottom-4 lg:col-span-2">
-                                                <h2 className="text-xl font-semibold mb-6 flex justify-between items-center">
-                                                    <div className="flex items-center gap-4">
+                                                <h2 className="text-xl font-semibold mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                                                    <div className="flex flex-wrap items-center gap-4">
                                                         <span>Verification Results</span>
                                                         <div className="flex gap-2">
                                                             <button
@@ -719,7 +799,7 @@ const Dashboard = () => {
                                                     <span className="text-xs font-mono text-premium-secondary">TX: {result.data?.transaction_id}</span>
                                                 </h2>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                                                     {/* Photo Section */}
                                                     <div className="md:col-span-1">
                                                         {result.data?.image ? (
@@ -736,7 +816,7 @@ const Dashboard = () => {
                                                     </div>
 
                                                     {/* Data Sections */}
-                                                    <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                    <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                                         {/* Group 1: Personal Info */}
                                                         <div className="space-y-4">
                                                             <h3 className="text-xs font-bold text-premium-primary uppercase tracking-widest border-b border-premium-border pb-1">Personal</h3>
@@ -785,46 +865,50 @@ const Dashboard = () => {
 
                                         <FilterBar />
 
-                                        <table className="w-full text-left">
-                                            <thead>
-                                                <tr className="border-b border-premium-border text-premium-secondary text-sm">
-                                                    <th className="pb-4">NIN</th>
-                                                    <th className="pb-4">Date</th>
-                                                    <th className="pb-4">Name</th>
-                                                    <th className="pb-4 text-right">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-premium-border">
-                                                {getFilteredData(transactions.filter(t => t.type === 'NIN_VALIDATION'))
-                                                    .slice((verifyLogsPage - 1) * ITEMS_PER_PAGE, verifyLogsPage * ITEMS_PER_PAGE)
-                                                    .map((tx) => (
-                                                        <tr key={tx.id} className="text-sm hover:bg-premium-overlay transition-colors">
-                                                            <td className="py-4 font-mono">{tx.details?.nin || '---'}</td>
-                                                            <td className="py-4 text-premium-secondary">{new Date(tx.timestamp).toLocaleString()}</td>
-                                                            <td className="py-4">{[tx.details?.fname, tx.details?.lname].filter(Boolean).join(' ') || '---'}</td>
-                                                            <td className="py-4 text-right">
-                                                                <div className="flex items-center justify-end gap-2">
-                                                                    <button
-                                                                        onClick={() => handlePrint(tx.details)}
-                                                                        className="p-2 hover:bg-premium-overlay rounded-lg text-premium-secondary hover:text-premium-text transition-all"
-                                                                        title="Print Verification Slip"
-                                                                    >
-                                                                        <Printer size={16} />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDownload(tx.details)}
-                                                                        className="p-2 hover:bg-premium-overlay rounded-lg text-premium-secondary hover:text-premium-text transition-all"
-                                                                        title="Download Verification Slip"
-                                                                    >
-                                                                        <Download size={16} />
-                                                                    </button>
-                                                                    <span className="px-2 py-1 bg-status-emerald/20 text-status-emerald rounded text-[10px] font-bold uppercase">Verified</span>
-                                                                </div>
-                                                            </td>
+                                        <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                            <div className="inline-block min-w-full align-middle p-4 sm:p-0">
+                                                <table className="w-full text-left">
+                                                    <thead>
+                                                        <tr className="border-b border-premium-border text-premium-secondary text-sm">
+                                                            <th className="pb-4">NIN</th>
+                                                            <th className="pb-4">Date</th>
+                                                            <th className="pb-4">Name</th>
+                                                            <th className="pb-4 text-right">Status</th>
                                                         </tr>
-                                                    ))}
-                                            </tbody>
-                                        </table>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-premium-border">
+                                                        {getFilteredData(transactions.filter(t => t.type === 'NIN_VALIDATION'))
+                                                            .slice((verifyLogsPage - 1) * ITEMS_PER_PAGE, verifyLogsPage * ITEMS_PER_PAGE)
+                                                            .map((tx) => (
+                                                                <tr key={tx.id} className="text-sm hover:bg-premium-overlay transition-colors">
+                                                                    <td className="py-4 font-mono">{tx.details?.nin || '---'}</td>
+                                                                    <td className="py-4 text-premium-secondary">{new Date(tx.timestamp).toLocaleString()}</td>
+                                                                    <td className="py-4">{[tx.details?.fname, tx.details?.lname].filter(Boolean).join(' ') || '---'}</td>
+                                                                    <td className="py-4 text-right">
+                                                                        <div className="flex items-center justify-end gap-2">
+                                                                            <button
+                                                                                onClick={() => handlePrint(tx.details)}
+                                                                                className="p-2 hover:bg-premium-overlay rounded-lg text-premium-secondary hover:text-premium-text transition-all"
+                                                                                title="Print Verification Slip"
+                                                                            >
+                                                                                <Printer size={16} />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDownload(tx.details)}
+                                                                                className="p-2 hover:bg-premium-overlay rounded-lg text-premium-secondary hover:text-premium-text transition-all"
+                                                                                title="Download Verification Slip"
+                                                                            >
+                                                                                <Download size={16} />
+                                                                            </button>
+                                                                            <span className="px-2 py-1 bg-status-emerald/20 text-status-emerald rounded text-[10px] font-bold uppercase">Verified</span>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
 
                                         {/* Pagination Controls for Verification History */}
                                         {getFilteredData(transactions.filter(t => t.type === 'NIN_VALIDATION')).length > ITEMS_PER_PAGE && (
@@ -863,63 +947,67 @@ const Dashboard = () => {
 
                                 <FilterBar />
 
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="border-b border-premium-border text-premium-secondary text-sm">
-                                            <th className="pb-4">Action</th>
-                                            <th className="pb-4">Date</th>
-                                            <th className="pb-4">Actor</th>
-                                            <th className="pb-4">Details</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-premium-border">
-                                        {getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type)))
-                                            .slice((auditPage - 1) * ITEMS_PER_PAGE, auditPage * ITEMS_PER_PAGE)
-                                            .map((tx) => (
-                                                <tr key={tx.id} className="text-sm hover:bg-premium-overlay transition-colors">
-                                                    <td className="py-4 font-medium">
-                                                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase 
-                                                        ${tx.type.includes('USER') ? 'bg-status-blue/20 text-status-blue' : 'bg-premium-overlay text-premium-text'}`}>
-                                                            {tx.type.replace('_', ' ')}
-                                                        </span>
-                                                    </td>
-                                                    <td className="py-4 text-premium-secondary">{new Date(tx.timestamp).toLocaleString()}</td>
-                                                    <td className="py-4 font-medium">{tx.details?.actor || tx.username}</td>
-                                                    <td className="py-4 text-premium-secondary">
-                                                        {tx.details?.info || tx.details?.reason || '---'}
-                                                        {tx.details?.created_user && <span>Created {tx.details.created_user}</span>}
-                                                        {tx.details?.deleted_user && <span>Deleted {tx.details.deleted_user}</span>}
-                                                        {tx.details?.updated_user && <span>Updated {tx.details.updated_user}</span>}
-                                                    </td>
+                                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                    <div className="inline-block min-w-full align-middle p-4 sm:p-0">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-premium-border text-premium-secondary text-sm">
+                                                    <th className="pb-4">Action</th>
+                                                    <th className="pb-4">Date</th>
+                                                    <th className="pb-4">Actor</th>
+                                                    <th className="pb-4">Details</th>
                                                 </tr>
-                                            ))}
-                                    </tbody>
-                                </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-premium-border">
+                                                {getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type)))
+                                                    .slice((auditPage - 1) * ITEMS_PER_PAGE, auditPage * ITEMS_PER_PAGE)
+                                                    .map((tx) => (
+                                                        <tr key={tx.id} className="text-sm hover:bg-premium-overlay transition-colors">
+                                                            <td className="py-4 font-medium">
+                                                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase 
+                                                        ${tx.type.includes('USER') ? 'bg-status-blue/20 text-status-blue' : 'bg-premium-overlay text-premium-text'}`}>
+                                                                    {tx.type.replace('_', ' ')}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-4 text-premium-secondary">{new Date(tx.timestamp).toLocaleString()}</td>
+                                                            <td className="py-4 font-medium">{tx.details?.actor || tx.username}</td>
+                                                            <td className="py-4 text-premium-secondary">
+                                                                {tx.details?.info || tx.details?.reason || '---'}
+                                                                {tx.details?.created_user && <span>Created {tx.details.created_user}</span>}
+                                                                {tx.details?.deleted_user && <span>Deleted {tx.details.deleted_user}</span>}
+                                                                {tx.details?.updated_user && <span>Updated {tx.details.updated_user}</span>}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                            </tbody>
+                                        </table>
 
-                                {/* Pagination Controls for Audit Logs */}
-                                {getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length > ITEMS_PER_PAGE && (
-                                    <div className="mt-6 flex items-center justify-between border-t border-premium-border pt-6">
-                                        <div className="text-sm text-premium-secondary">
-                                            Showing <span className="text-premium-text font-bold">{(auditPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="text-premium-text font-bold">{Math.min(auditPage * ITEMS_PER_PAGE, getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length)}</span> of <span className="text-premium-text font-bold">{getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length}</span> logs
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => setAuditPage(p => Math.max(1, p - 1))}
-                                                disabled={auditPage === 1}
-                                                className="btn-secondary py-2 px-4 text-xs disabled:opacity-50"
-                                            >
-                                                Previous
-                                            </button>
-                                            <button
-                                                onClick={() => setAuditPage(p => Math.min(Math.ceil(getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length / ITEMS_PER_PAGE), p + 1))}
-                                                disabled={auditPage === Math.ceil(getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length / ITEMS_PER_PAGE)}
-                                                className="btn-primary py-2 px-4 text-xs disabled:opacity-50"
-                                            >
-                                                Next
-                                            </button>
-                                        </div>
+                                        {/* Pagination Controls for Audit Logs */}
+                                        {getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length > ITEMS_PER_PAGE && (
+                                            <div className="mt-6 flex items-center justify-between border-t border-premium-border pt-6">
+                                                <div className="text-sm text-premium-secondary">
+                                                    Showing <span className="text-premium-text font-bold">{(auditPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="text-premium-text font-bold">{Math.min(auditPage * ITEMS_PER_PAGE, getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length)}</span> of <span className="text-premium-text font-bold">{getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length}</span> logs
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => setAuditPage(p => Math.max(1, p - 1))}
+                                                        disabled={auditPage === 1}
+                                                        className="btn-secondary py-2 px-4 text-xs disabled:opacity-50"
+                                                    >
+                                                        Previous
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setAuditPage(p => Math.min(Math.ceil(getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length / ITEMS_PER_PAGE), p + 1))}
+                                                        disabled={auditPage === Math.ceil(getFilteredData(transactions.filter(t => !['NIN_VALIDATION', 'UNIT_PURCHASE'].includes(t.type))).length / ITEMS_PER_PAGE)}
+                                                        className="btn-primary py-2 px-4 text-xs disabled:opacity-50"
+                                                    >
+                                                        Next
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         )}
 
@@ -930,84 +1018,88 @@ const Dashboard = () => {
 
                                 <FilterBar />
 
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="border-b border-premium-border text-premium-secondary text-sm">
-                                            <th className="pb-4">Type</th>
-                                            <th className="pb-4">Date</th>
-                                            <th className="pb-4">Actor</th>
-                                            <th className="pb-4">Details</th>
-                                            <th className="pb-4 text-right">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-premium-border">
-                                        {getFilteredData(transactions)
-                                            .slice((historyPage - 1) * ITEMS_PER_PAGE, historyPage * ITEMS_PER_PAGE)
-                                            .map((tx) => (
-                                                <tr key={tx.id} className="text-sm hover:bg-premium-overlay transition-colors">
-                                                    <td className="py-4 font-medium">
-                                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase 
-                                                ${tx.type === 'USER_CREATION' ? 'bg-status-blue/20 text-status-blue' :
-                                                                tx.type === 'USER_DELETION' ? 'bg-status-red/20 text-status-red' :
-                                                                    tx.type === 'USER_UPDATE' ? 'bg-status-amber/20 text-status-amber' :
-                                                                        tx.type === 'UNIT_PURCHASE' ? 'bg-emerald-500/20 text-emerald-400' :
-                                                                            'bg-premium-overlay text-premium-text'}`}>
-                                                            {tx.type.replace('_', ' ')}
-                                                        </span>
-                                                    </td>
-                                                    <td className="py-4 text-premium-secondary">{new Date(tx.timestamp).toLocaleString()}</td>
-                                                    <td className="py-4 font-medium text-premium-text">
-                                                        {tx.details?.actor || tx.username}
-                                                    </td>
-                                                    <td className="py-4 text-premium-secondary">
-                                                        {tx.type === 'UNIT_PURCHASE' && (
-                                                            <span>Purchased <b>{tx.amount}</b> units for <b>₦{tx.details?.price_paid?.toLocaleString()}</b></span>
-                                                        )}
-                                                        {tx.details?.created_user && <span>Created user <b>{tx.details.created_user}</b> as {tx.details.role}</span>}
-                                                        {tx.details?.deleted_user && <span>Deleted user <b>{tx.details.deleted_user}</b></span>}
-                                                        {tx.details?.updated_user && (
-                                                            <span>
-                                                                {tx.details.action === 'SUSPENDED' ? 'Suspended' :
-                                                                    tx.details.action === 'ACTIVATED' ? 'Activated' : 'Updated'}
-                                                                <b> {tx.details.updated_user}</b>
-                                                                {tx.details.action ? '' : `: ${tx.details.changes?.join(', ')}`}
-                                                            </span>
-                                                        )}
-                                                        {!tx.details?.created_user && !tx.details?.deleted_user && !tx.details?.updated_user &&
-                                                            <span>{tx.details?.info || tx.details?.reason || '---'}</span>}
-                                                    </td>
-                                                    <td className="py-4 text-right">
-                                                        <span className="px-2 py-1 bg-premium-accent/20 text-premium-accent rounded text-xs">Success</span>
-                                                    </td>
+                                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                    <div className="inline-block min-w-full align-middle p-4 sm:p-0">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-premium-border text-premium-secondary text-sm">
+                                                    <th className="pb-4">Type</th>
+                                                    <th className="pb-4">Date</th>
+                                                    <th className="pb-4">Actor</th>
+                                                    <th className="pb-4">Details</th>
+                                                    <th className="pb-4 text-right">Status</th>
                                                 </tr>
-                                            ))}
-                                    </tbody>
-                                </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-premium-border">
+                                                {getFilteredData(transactions)
+                                                    .slice((historyPage - 1) * ITEMS_PER_PAGE, historyPage * ITEMS_PER_PAGE)
+                                                    .map((tx) => (
+                                                        <tr key={tx.id} className="text-sm hover:bg-premium-overlay transition-colors">
+                                                            <td className="py-4 font-medium">
+                                                                <span className={`px-2 py-1 rounded text-xs font-bold uppercase 
+                                                ${tx.type === 'USER_CREATION' ? 'bg-status-blue/20 text-status-blue' :
+                                                                        tx.type === 'USER_DELETION' ? 'bg-status-red/20 text-status-red' :
+                                                                            tx.type === 'USER_UPDATE' ? 'bg-status-amber/20 text-status-amber' :
+                                                                                tx.type === 'UNIT_PURCHASE' ? 'bg-emerald-500/20 text-emerald-400' :
+                                                                                    'bg-premium-overlay text-premium-text'}`}>
+                                                                    {tx.type.replace('_', ' ')}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-4 text-premium-secondary">{new Date(tx.timestamp).toLocaleString()}</td>
+                                                            <td className="py-4 font-medium text-premium-text">
+                                                                {tx.details?.actor || tx.username}
+                                                            </td>
+                                                            <td className="py-4 text-premium-secondary">
+                                                                {tx.type === 'UNIT_PURCHASE' && (
+                                                                    <span>Purchased <b>{tx.amount}</b> units for <b>₦{tx.details?.price_paid?.toLocaleString()}</b></span>
+                                                                )}
+                                                                {tx.details?.created_user && <span>Created user <b>{tx.details.created_user}</b> as {tx.details.role}</span>}
+                                                                {tx.details?.deleted_user && <span>Deleted user <b>{tx.details.deleted_user}</b></span>}
+                                                                {tx.details?.updated_user && (
+                                                                    <span>
+                                                                        {tx.details.action === 'SUSPENDED' ? 'Suspended' :
+                                                                            tx.details.action === 'ACTIVATED' ? 'Activated' : 'Updated'}
+                                                                        <b> {tx.details.updated_user}</b>
+                                                                        {tx.details.action ? '' : `: ${tx.details.changes?.join(', ')}`}
+                                                                    </span>
+                                                                )}
+                                                                {!tx.details?.created_user && !tx.details?.deleted_user && !tx.details?.updated_user &&
+                                                                    <span>{tx.details?.info || tx.details?.reason || '---'}</span>}
+                                                            </td>
+                                                            <td className="py-4 text-right">
+                                                                <span className="px-2 py-1 bg-premium-accent/20 text-premium-accent rounded text-xs">Success</span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                            </tbody>
+                                        </table>
 
-                                {/* Pagination Controls for History */}
-                                {getFilteredData(transactions).length > ITEMS_PER_PAGE && (
-                                    <div className="mt-6 flex items-center justify-between border-t border-premium-border pt-6">
-                                        <div className="text-sm text-premium-secondary">
-                                            Showing <span className="text-premium-text font-bold">{(historyPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="text-premium-text font-bold">{Math.min(historyPage * ITEMS_PER_PAGE, getFilteredData(transactions).length)}</span> of <span className="text-premium-text font-bold">{getFilteredData(transactions).length}</span> entries
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
-                                                disabled={historyPage === 1}
-                                                className="btn-secondary py-1 px-4 text-xs disabled:opacity-50"
-                                            >
-                                                Previous
-                                            </button>
-                                            <button
-                                                onClick={() => setHistoryPage(p => Math.min(Math.ceil(getFilteredData(transactions).length / ITEMS_PER_PAGE), p + 1))}
-                                                disabled={historyPage === Math.ceil(getFilteredData(transactions).length / ITEMS_PER_PAGE)}
-                                                className="btn-primary py-1 px-4 text-xs disabled:opacity-50"
-                                            >
-                                                Next
-                                            </button>
-                                        </div>
+                                        {/* Pagination Controls for History */}
+                                        {getFilteredData(transactions).length > ITEMS_PER_PAGE && (
+                                            <div className="mt-6 flex items-center justify-between border-t border-premium-border pt-6">
+                                                <div className="text-sm text-premium-secondary">
+                                                    Showing <span className="text-premium-text font-bold">{(historyPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="text-premium-text font-bold">{Math.min(historyPage * ITEMS_PER_PAGE, getFilteredData(transactions).length)}</span> of <span className="text-premium-text font-bold">{getFilteredData(transactions).length}</span> entries
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                                                        disabled={historyPage === 1}
+                                                        className="btn-secondary py-1 px-4 text-xs disabled:opacity-50"
+                                                    >
+                                                        Previous
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setHistoryPage(p => Math.min(Math.ceil(getFilteredData(transactions).length / ITEMS_PER_PAGE), p + 1))}
+                                                        disabled={historyPage === Math.ceil(getFilteredData(transactions).length / ITEMS_PER_PAGE)}
+                                                        className="btn-primary py-1 px-4 text-xs disabled:opacity-50"
+                                                    >
+                                                        Next
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         )}
 
@@ -1086,127 +1178,131 @@ const Dashboard = () => {
                                 {/* User List */}
                                 <div className="glass-card">
                                     <h2 className="text-xl font-semibold mb-6">Team Members</h2>
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="border-b border-premium-border text-premium-secondary text-sm">
-                                                <th className="pb-4">Username</th>
-                                                <th className="pb-4">Email</th>
-                                                <th className="pb-4">Role</th>
-                                                <th className="pb-4">Status</th>
-                                                <th className="pb-4 text-right">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-premium-border">
-                                            {orgUsers.slice((teamPage - 1) * ITEMS_PER_PAGE, teamPage * ITEMS_PER_PAGE).map(u => (
-                                                <tr key={u.id} className="text-sm hover:bg-premium-overlay transition-colors">
-                                                    <td className="py-4 font-medium">{u.username}</td>
-                                                    <td className="py-4 text-premium-secondary">{u.email}</td>
-                                                    <td className="py-4">
-                                                        <span className="code-badge">
-                                                            {u.role?.includes('org_admin') ? 'Administrator'
-                                                                : u.role?.includes('IDENTITY') ? 'Verification Access'
-                                                                    : u.role || '—'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="py-4">
-                                                        <span className={`px-2 py-1 rounded text-xs ${u.is_active ? 'bg-status-emerald/20 text-status-emerald' : 'bg-status-red/20 text-status-red'}`}>
-                                                            {u.is_active ? 'Active' : 'Inactive'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="py-4 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                onClick={() => handleToggleUserSuspension(u)}
-                                                                className={`p-2 rounded-lg transition-all ${u.is_active ? 'text-status-red hover:bg-status-red/10' : 'text-status-emerald hover:bg-green-400/10'}`}
-                                                                title={u.is_active ? "Suspend User" : "Activate User"}
+                                    <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                        <div className="inline-block min-w-full align-middle p-4 sm:p-0">
+                                            <table className="w-full text-left">
+                                                <thead>
+                                                    <tr className="border-b border-premium-border text-premium-secondary text-sm">
+                                                        <th className="pb-4">Username</th>
+                                                        <th className="pb-4">Email</th>
+                                                        <th className="pb-4">Role</th>
+                                                        <th className="pb-4">Status</th>
+                                                        <th className="pb-4 text-right">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-premium-border">
+                                                    {orgUsers.slice((teamPage - 1) * ITEMS_PER_PAGE, teamPage * ITEMS_PER_PAGE).map(u => (
+                                                        <tr key={u.id} className="text-sm hover:bg-premium-overlay transition-colors">
+                                                            <td className="py-4 font-medium">{u.username}</td>
+                                                            <td className="py-4 text-premium-secondary">{u.email}</td>
+                                                            <td className="py-4">
+                                                                <span className="code-badge">
+                                                                    {u.role?.includes('org_admin') ? 'Administrator'
+                                                                        : u.role?.includes('IDENTITY') ? 'Verification Access'
+                                                                            : u.role || '—'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-4">
+                                                                <span className={`px-2 py-1 rounded text-xs ${u.is_active ? 'bg-status-emerald/20 text-status-emerald' : 'bg-status-red/20 text-status-red'}`}>
+                                                                    {u.is_active ? 'Active' : 'Inactive'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-4 text-right">
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <button
+                                                                        onClick={() => handleToggleUserSuspension(u)}
+                                                                        className={`p-2 rounded-lg transition-all ${u.is_active ? 'text-status-red hover:bg-status-red/10' : 'text-status-emerald hover:bg-green-400/10'}`}
+                                                                        title={u.is_active ? "Suspend User" : "Activate User"}
+                                                                    >
+                                                                        {u.is_active ? <XCircle size={16} /> : <CheckCircle size={16} />}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setEditingUser(u);
+                                                                            setIsEditModalOpen(true);
+                                                                        }}
+                                                                        className="p-2 hover:bg-premium-overlay rounded-lg text-premium-secondary hover:text-premium-text transition-all"
+                                                                        title="Edit Role"
+                                                                    >
+                                                                        <Edit2 size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                    {orgUsers.length === 0 && (
+                                                        <tr>
+                                                            <td colSpan="5" className="py-8 text-center text-premium-secondary">No team members found</td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+
+                                            {/* Pagination Controls for Team */}
+                                            {orgUsers.length > ITEMS_PER_PAGE && (
+                                                <div className="mt-6 flex items-center justify-between border-t border-premium-border pt-6">
+                                                    <div className="text-sm text-premium-secondary">
+                                                        Page <span className="text-premium-text font-bold">{teamPage}</span> of <span className="text-premium-text font-bold">{Math.ceil(orgUsers.length / ITEMS_PER_PAGE)}</span>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => setTeamPage(p => Math.max(1, p - 1))}
+                                                            disabled={teamPage === 1}
+                                                            className="btn-secondary py-1 px-4 text-xs disabled:opacity-50"
+                                                        >
+                                                            Previous
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setTeamPage(p => Math.min(Math.ceil(orgUsers.length / ITEMS_PER_PAGE), p + 1))}
+                                                            disabled={teamPage === Math.ceil(orgUsers.length / ITEMS_PER_PAGE)}
+                                                            className="btn-primary py-1 px-4 text-xs disabled:opacity-50"
+                                                        >
+                                                            Next
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Edit Role Modal */}
+                                        {isEditModalOpen && editingUser && (
+                                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                                <div className="glass-card max-w-sm w-full p-6 space-y-6">
+                                                    <h3 className="text-xl font-bold">Edit Role</h3>
+                                                    <p className="text-sm text-premium-secondary">Update permissions for <span className="text-premium-text font-medium">{editingUser.username}</span></p>
+
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <label className="text-sm text-premium-secondary block mb-1">Role Assignment</label>
+                                                            <select
+                                                                className="input-field w-full"
+                                                                value={editingUser.role}
+                                                                onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
                                                             >
-                                                                {u.is_active ? <XCircle size={16} /> : <CheckCircle size={16} />}
+                                                                <option value="IDENTITY">Verification Access</option>
+                                                                <option value="org_admin,WALLET">Administrator</option>
+                                                            </select>
+                                                        </div>
+                                                        <div className="flex gap-4 pt-2">
+                                                            <button
+                                                                onClick={() => setIsEditModalOpen(false)}
+                                                                className="btn-secondary flex-1"
+                                                            >
+                                                                Cancel
                                                             </button>
                                                             <button
-                                                                onClick={() => {
-                                                                    setEditingUser(u);
-                                                                    setIsEditModalOpen(true);
-                                                                }}
-                                                                className="p-2 hover:bg-premium-overlay rounded-lg text-premium-secondary hover:text-premium-text transition-all"
-                                                                title="Edit Role"
+                                                                onClick={handleUpdateUserRole}
+                                                                className="btn-primary flex-1"
                                                             >
-                                                                <Edit2 size={16} />
+                                                                Save Changes
                                                             </button>
                                                         </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {orgUsers.length === 0 && (
-                                                <tr>
-                                                    <td colSpan="5" className="py-8 text-center text-premium-secondary">No team members found</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-
-                                    {/* Pagination Controls for Team */}
-                                    {orgUsers.length > ITEMS_PER_PAGE && (
-                                        <div className="mt-6 flex items-center justify-between border-t border-premium-border pt-6">
-                                            <div className="text-sm text-premium-secondary">
-                                                Page <span className="text-premium-text font-bold">{teamPage}</span> of <span className="text-premium-text font-bold">{Math.ceil(orgUsers.length / ITEMS_PER_PAGE)}</span>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => setTeamPage(p => Math.max(1, p - 1))}
-                                                    disabled={teamPage === 1}
-                                                    className="btn-secondary py-1 px-4 text-xs disabled:opacity-50"
-                                                >
-                                                    Previous
-                                                </button>
-                                                <button
-                                                    onClick={() => setTeamPage(p => Math.min(Math.ceil(orgUsers.length / ITEMS_PER_PAGE), p + 1))}
-                                                    disabled={teamPage === Math.ceil(orgUsers.length / ITEMS_PER_PAGE)}
-                                                    className="btn-primary py-1 px-4 text-xs disabled:opacity-50"
-                                                >
-                                                    Next
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Edit Role Modal */}
-                                {isEditModalOpen && editingUser && (
-                                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                                        <div className="glass-card max-w-sm w-full p-6 space-y-6">
-                                            <h3 className="text-xl font-bold">Edit Role</h3>
-                                            <p className="text-sm text-premium-secondary">Update permissions for <span className="text-premium-text font-medium">{editingUser.username}</span></p>
-
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <label className="text-sm text-premium-secondary block mb-1">Role Assignment</label>
-                                                    <select
-                                                        className="input-field w-full"
-                                                        value={editingUser.role}
-                                                        onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
-                                                    >
-                                                        <option value="IDENTITY">Verification Access</option>
-                                                        <option value="org_admin,WALLET">Administrator</option>
-                                                    </select>
-                                                </div>
-                                                <div className="flex gap-4 pt-2">
-                                                    <button
-                                                        onClick={() => setIsEditModalOpen(false)}
-                                                        className="btn-secondary flex-1"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                    <button
-                                                        onClick={handleUpdateUserRole}
-                                                        className="btn-primary flex-1"
-                                                    >
-                                                        Save Changes
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         )}
 
@@ -1233,30 +1329,129 @@ const Dashboard = () => {
                         )}
 
                         {activeTab === 'branding' && (
-                            <div className="glass-card max-w-2xl">
-                                <h2 className="text-xl font-semibold mb-6">White Labelling Settings</h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-sm text-premium-secondary block mb-1">Organisation Name</label>
-                                        <input
-                                            className="input-field w-full"
-                                            value={branding.name}
-                                            onChange={(e) => updateBranding({ name: e.target.value })}
-                                        />
+                            <div className="glass-card max-w-2xl animate-in fade-in slide-in-from-right-4">
+                                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                                    <Palette className="text-premium-primary" /> White Labelling Settings
+                                </h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="text-sm text-premium-secondary block mb-2 uppercase tracking-tight font-bold">Organisation Name</label>
+                                            <input
+                                                className="input-field w-full"
+                                                value={branding.name}
+                                                onChange={(e) => updateBranding({ name: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-sm text-premium-secondary block mb-2 uppercase tracking-tight font-bold">Primary Color</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        className="h-10 w-10 rounded cursor-pointer bg-transparent border-none"
+                                                        value={branding.primaryColor || '#3B82F6'}
+                                                        onChange={(e) => updateBranding({ primaryColor: e.target.value })}
+                                                    />
+                                                    <input
+                                                        className="input-field flex-1 text-xs font-mono"
+                                                        value={branding.primaryColor || '#3B82F6'}
+                                                        onChange={(e) => updateBranding({ primaryColor: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm text-premium-secondary block mb-2 uppercase tracking-tight font-bold">Secondary Color</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        className="h-10 w-10 rounded cursor-pointer bg-transparent border-none"
+                                                        value={branding.secondaryColor || '#64748B'}
+                                                        onChange={(e) => updateBranding({ secondaryColor: e.target.value })}
+                                                    />
+                                                    <input
+                                                        className="input-field flex-1 text-xs font-mono"
+                                                        value={branding.secondaryColor || '#64748B'}
+                                                        onChange={(e) => updateBranding({ secondaryColor: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-sm text-premium-secondary block mb-2 uppercase tracking-tight font-bold">Logo Configuration</label>
+                                            <div className="flex items-center gap-4 p-4 bg-premium-overlay rounded-xl border border-dashed border-premium-border">
+                                                <div className="flex-1">
+                                                    <p className="text-xs text-premium-secondary mb-2">Upload a high-quality logo (PNG or JPG). It will be automatically resized and optimized.</p>
+                                                    <label className="btn-primary py-2 px-4 text-xs cursor-pointer inline-flex items-center gap-2">
+                                                        <Upload size={14} /> Choose Logo
+                                                        <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-sm text-premium-secondary block mb-1">Logo Text (Initial)</label>
-                                        <input
-                                            className="input-field w-full"
-                                            value={branding.logoText}
-                                            onChange={(e) => updateBranding({ logoText: e.target.value })}
-                                        />
+
+                                    <div className="space-y-6">
+                                        <label className="text-sm text-premium-secondary block mb-2 uppercase tracking-tight font-bold text-center">Preview</label>
+                                        <div className="glass-card flex flex-col items-center justify-center min-h-[200px] border-dashed border-premium-border/40">
+                                            {logoPreview ? (
+                                                <img src={logoPreview} alt="Logo Preview" className="h-20 w-auto object-contain mb-4 animate-in zoom-in duration-300" />
+                                            ) : (
+                                                <div className="h-20 w-20 rounded-full bg-premium-primary/10 flex items-center justify-center text-premium-primary text-3xl font-black mb-4">
+                                                    {branding.logoText || (branding.name ? branding.name[0] : 'R')}
+                                                </div>
+                                            )}
+                                            <p className="text-xl font-bold">{branding.name}</p>
+                                            <div className="flex gap-2 mt-4">
+                                                <div className="h-4 w-4 rounded-full" style={{ backgroundColor: branding.primaryColor || '#3B82F6' }}></div>
+                                                <div className="h-4 w-4 rounded-full" style={{ backgroundColor: branding.secondaryColor || '#64748B' }}></div>
+                                            </div>
+
+                                            <div className="mt-6 w-full px-6 space-y-3 pt-6 border-t border-premium-border/40">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] text-premium-secondary uppercase font-bold">Status</span>
+                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${isSubscriptionActive && !isExpired
+                                                            ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20'
+                                                            : 'bg-status-red/10 text-status-red border-status-red/20 animate-pulse'
+                                                        }`}>
+                                                        {isExpired ? 'Expired' : (isSubscriptionActive ? 'Active' : 'Inactive')}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[10px]">
+                                                    <span className="text-premium-secondary uppercase font-bold">Subscribed</span>
+                                                    <span className="font-mono text-premium-text">
+                                                        {user?.organisation?.subscription_date ? new Date(user.organisation.subscription_date).toLocaleDateString() : 'N/A'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[10px]">
+                                                    <span className="text-premium-secondary uppercase font-bold">Expires</span>
+                                                    <span className="font-mono text-premium-text">
+                                                        {user?.organisation?.subscription_expiry ? new Date(user.organisation.subscription_expiry).toLocaleDateString() : 'N/A'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={handleSaveBranding}
+                                            disabled={isSavingBranding}
+                                            className="btn-primary w-full flex items-center justify-center gap-2"
+                                        >
+                                            {isSavingBranding ? (
+                                                <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            ) : (
+                                                <><CheckCircle size={18} /> Apply Branding</>
+                                            )}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                    </div>
+                    </main>
                 </>
             )}
 

@@ -644,6 +644,7 @@ def get_me(user: User = Depends(get_current_user)):
             "secondary_color": org.secondary_color,
             "subscription_status": "active" if org.slug == 'default' else org.subscription_status,
             "subscription_expiry": None if org.slug == 'default' else org.subscription_expiry,
+            "subscription_date": None if org.slug == 'default' else org.subscription_date,
             "subscription_plan": org.subscription_plan,
             "tier_id": org.tier_id,
             "custom_unit_cost": org.custom_unit_cost,
@@ -1386,7 +1387,8 @@ def subscribe_org(
     # Success: Set to active and 1 year duration
     user.org.subscription_status = "active"
     user.org.subscription_plan = plan_id
-    user.org.subscription_expiry = datetime.utcnow() + timedelta(days=365) # Yearly
+    user.org.subscription_date = datetime.utcnow()
+    user.org.subscription_expiry = user.org.subscription_date + timedelta(days=365) # Yearly
     
     # AWARD 100 UNIT BONUS
     if not user.org.wallet:
@@ -1621,6 +1623,9 @@ def list_organisations(admin: User = Depends(get_current_platform_user), db: Ses
             "tier_name": o.tier.name if o.tier else None,
             "custom_unit_cost": o.custom_unit_cost,
             "subscription_price": o.subscription_price,
+            "subscription_status": o.subscription_status,
+            "subscription_date": o.subscription_date,
+            "subscription_expiry": o.subscription_expiry,
             "admin_username": db.query(User).filter(User.organisation_id == o.id, User.role.like('%org_admin%')).first().username if db.query(User).filter(User.organisation_id == o.id, User.role.like('%org_admin%')).first() else None,
             "admin_email": db.query(User).filter(User.organisation_id == o.id, User.role.like('%org_admin%')).first().email if db.query(User).filter(User.organisation_id == o.id, User.role.like('%org_admin%')).first() else None,
             "is_suspended": o.is_suspended
@@ -1826,6 +1831,47 @@ def create_organisation(
         db.rollback()
         print(f"Create Org Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to create organisation: {str(e)}")
+
+@app.put("/org/branding")
+def update_org_branding(
+    name: str = Form(None),
+    primary_color: str = Form(None),
+    secondary_color: str = Form(None),
+    logo: UploadFile = File(None),
+    admin: User = Depends(get_current_org_admin),
+    db: Session = Depends(get_db)
+):
+    if not admin.org:
+        raise HTTPException(status_code=400, detail="User does not belong to an organisation")
+    
+    org = admin.org
+    if name: org.name = name
+    if primary_color: org.primary_color = primary_color
+    if secondary_color: org.secondary_color = secondary_color
+    
+    if logo:
+        try:
+            # Use org.slug to keep filename consistent
+            file_extension = "jpg"
+            safe_name = f"logo_{org.slug}.{file_extension}"
+            file_location = os.path.join(UPLOAD_DIR, safe_name)
+            
+            if process_logo(logo.file, file_location):
+                org.logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
+            else:
+                raise HTTPException(status_code=500, detail="Logo processing failed")
+        except Exception as e:
+            print(f"Branding logo update error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    db.commit()
+    db.refresh(org)
+    return {
+        "name": org.name,
+        "logo_url": org.logo_url,
+        "primary_color": org.primary_color,
+        "secondary_color": org.secondary_color
+    }
 
 
 @app.put("/admin/organisations/{org_id}")

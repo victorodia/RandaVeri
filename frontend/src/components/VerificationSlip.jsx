@@ -37,9 +37,9 @@ const VerificationSlip = ({ result, branding }) => {
             </div>
 
             {/* Main Content */}
-            <div className="grid grid-cols-12 gap-8 relative">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-8 relative">
                 {/* Photo */}
-                <div className="col-span-4">
+                <div className="col-span-1 sm:col-span-4">
                     <div className="aspect-[3/4] rounded-lg border-2 border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden shadow-sm">
                         {data.image ? (
                             <img src={`data:image/jpeg;base64,${data.image}`} className="w-full h-full object-cover" alt="Subject" />
@@ -56,10 +56,10 @@ const VerificationSlip = ({ result, branding }) => {
                 </div>
 
                 {/* Details */}
-                <div className="col-span-8 space-y-6">
+                <div className="col-span-1 sm:col-span-8 space-y-6">
                     <section>
                         <h3 className="text-[10px] font-black text-premium-primary uppercase tracking-[0.2em] mb-3 border-b border-gray-100 pb-1">Subject Information</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <p className="text-[8px] font-bold text-gray-400 uppercase mb-0.5">Surname</p>
                                 <p className="text-sm font-black uppercase">{data.lname || '---'}</p>
@@ -81,7 +81,7 @@ const VerificationSlip = ({ result, branding }) => {
 
                     <section>
                         <h3 className="text-[10px] font-black text-premium-primary uppercase tracking-[0.2em] mb-3 border-b border-gray-100 pb-1">Geographical Data</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <p className="text-[8px] font-bold text-gray-400 uppercase mb-0.5">State of Origin</p>
                                 <p className="text-xs font-bold uppercase">{data.stateOfOrigin || '---'}</p>

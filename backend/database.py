@@ -51,6 +51,7 @@ class Organisation(Base):
     secondary_color = Column(String)
     subscription_status = Column(String, default="inactive")
     subscription_expiry = Column(DateTime)
+    subscription_date = Column(DateTime)
     subscription_plan = Column(String, default="none")
     is_deleted = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False)
