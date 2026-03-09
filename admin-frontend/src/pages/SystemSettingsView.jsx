@@ -17,7 +17,8 @@ const SystemSettingsView = ({
         org_name: '',
         logo_url: '',
         primary_color: '#3B82F6',
-        secondary_color: '#64748B'
+        secondary_color: '#64748B',
+        subscription_price: 50000
     });
     const [loading, setLoading] = useState(false);
     const [banner, setBanner] = useState({ message: '', type: 'error' });
@@ -134,6 +135,19 @@ const SystemSettingsView = ({
                                     />
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm font-medium text-premium-secondary">
+                                <Shield size={16} /> Yearly Subscription Price (₦)
+                            </label>
+                            <input
+                                type="number"
+                                className="input-field w-full"
+                                value={config.subscription_price}
+                                onChange={e => setConfig({ ...config, subscription_price: e.target.value })}
+                                placeholder="50000"
+                            />
                         </div>
                     </div>
 

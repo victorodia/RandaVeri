@@ -542,7 +542,7 @@ const Dashboard = () => {
                                 </div>
                                 <div className="flex justify-between items-center text-xl font-bold text-premium-text">
                                     <span>Subscription Price</span>
-                                    <span>₦{user?.organisation?.subscription_price?.toLocaleString() || '500,000'}</span>
+                                    <span>₦{displayPrice}</span>
                                 </div>
                             </div>
 
@@ -1414,8 +1414,8 @@ const Dashboard = () => {
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-[10px] text-premium-secondary uppercase font-bold">Status</span>
                                                     <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${isSubscriptionActive && !isExpired
-                                                            ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20'
-                                                            : 'bg-status-red/10 text-status-red border-status-red/20 animate-pulse'
+                                                        ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20'
+                                                        : 'bg-status-red/10 text-status-red border-status-red/20 animate-pulse'
                                                         }`}>
                                                         {isExpired ? 'Expired' : (isSubscriptionActive ? 'Active' : 'Inactive')}
                                                     </span>
