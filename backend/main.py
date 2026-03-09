@@ -2,11 +2,13 @@ try:
     from .database import SessionLocal, engine, User, Wallet, Transaction, Config, RevokedToken, init_db, get_db, Organisation, ActivityLog, Tier, AdminRole, PasswordResetToken, EmailVerificationToken
     from .crypto import crypto_service
     from .email_service import EmailService
+    from .image_utils import process_logo
     from . import schemas
 except (ImportError, ValueError):
     from database import SessionLocal, engine, User, Wallet, Transaction, Config, RevokedToken, init_db, get_db, Organisation, ActivityLog, Tier, AdminRole, PasswordResetToken, EmailVerificationToken
     from crypto import crypto_service
     from email_service import EmailService
+    from image_utils import process_logo
     import schemas
 from passlib.context import CryptContext
 import requests
@@ -1713,12 +1715,17 @@ def create_organisation(
     logo_url = ""
     if logo:
         try:
-            safe_name = sanitize_filename(logo.filename)
+            # Generate a consistent name: logo_slug.jpg
+            file_extension = "jpg" # We force JPEG in process_logo
+            safe_name = f"logo_{slug}.{file_extension}"
             file_location = os.path.join(UPLOAD_DIR, safe_name)
-            with open(file_location, "wb") as buffer:
-                shutil.copyfileobj(logo.file, buffer)
-            # Use centralized BACKEND_URL
-            logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
+            
+            # Use the new image processing utility
+            if process_logo(logo.file, file_location):
+                logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
+            else:
+                 # Fallback if processing fails (optional, could also re-raise)
+                 print(f"Logo processing failed for {slug}")
         except Exception as e:
             print(f"File upload error: {e}")
             pass
@@ -1854,12 +1861,19 @@ def update_organisation(
     if subscription_price is not None: org.subscription_price = subscription_price
     
     if logo:
-        # Save new logo
-        file_location = os.path.join(UPLOAD_DIR, logo.filename)
-        with open(file_location, "wb") as buffer:
-            shutil.copyfileobj(logo.file, buffer)
-        # Use centralized BACKEND_URL
-        org.logo_url = f"{BACKEND_URL}/uploads/{logo.filename}"
+        try:
+            # Use org.slug to keep filename consistent (e.g. logo_my-org.jpg)
+            file_extension = "jpg"
+            safe_name = f"logo_{org.slug}.{file_extension}"
+            file_location = os.path.join(UPLOAD_DIR, safe_name)
+            
+            if process_logo(logo.file, file_location):
+                org.logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
+            else:
+                print(f"Logo processing failed for {org.slug}")
+        except Exception as e:
+            print(f"Logo update error: {e}")
+            pass
 
     # Handle Admin User Update
     # Find the admin user for this org (loose match for "admin" or "org_admin" in role)
