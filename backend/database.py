@@ -223,5 +223,16 @@ def init_db():
                     conn.commit()
                 else:
                     print("MIGRATION: subscription_plan column already exists")
+                
+                # Migration: Ensure all logo URLs use the production backend URL instead of localhost
+                prod_backend_url = "https://randaveri.onrender.com"
+                res = conn.execute(text("SELECT id, name, logo_url FROM organisations WHERE logo_url LIKE '%localhost:8000%'"))
+                local_logos = res.fetchall()
+                for org_id, org_name, logo_url in local_logos:
+                    if logo_url:
+                        new_url = logo_url.replace("http://localhost:8000", prod_backend_url)
+                        conn.execute(text("UPDATE organisations SET logo_url = :new_url WHERE id = :org_id"), {"new_url": new_url, "org_id": org_id})
+                        print(f"[MIGRATION] Updated logo URL for {org_name}: {logo_url} -> {new_url}")
+                conn.commit()
         except Exception as e:
             print(f"ERROR: Auto-migration failed: {e}")
