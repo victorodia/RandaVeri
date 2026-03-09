@@ -14,30 +14,30 @@ print(f"DEBUG: EmailService (Re)Loaded. Sender: {BREVO_SENDER_EMAIL}")
 
 class EmailService:
     @staticmethod
-    def send_transactional_email(to_email, subject, html_content, text_content=None):
+    def send_transactional_email(to_email, subject, html_content, text_content=None, sender_name_override=None):
         # Fresh reload inside the method to be absolutely sure
         load_dotenv(override=True)
         api_key = os.getenv("BREVO_API_KEY")
         sender_email = os.getenv("BREVO_SENDER_EMAIL")
-        sender_name = os.getenv("BREVO_SENDER_NAME")
+        sender_name = sender_name_override or os.getenv("BREVO_SENDER_NAME", "Randaframes")
 
         if not api_key:
             print(f"ERROR: BREVO_API_KEY not found. Email to {to_email} not sent.")
             return False
         
-        print(f"DEBUG: Sending email from {sender_email} to {to_email} using key {api_key[:10]}...")
+        print(f"DEBUG: Sending email from {sender_name} <{sender_email}> to {to_email}...")
         
         url = "https://api.brevo.com/v3/smtp/email"
         headers = {
             "accept": "application/json",
-            "api-key": BREVO_API_KEY,
+            "api-key": api_key,
             "content-type": "application/json"
         }
         
         payload = {
             "sender": {
-                "name": BREVO_SENDER_NAME,
-                "email": BREVO_SENDER_EMAIL
+                "name": sender_name,
+                "email": sender_email
             },
             "to": [
                 {
@@ -46,7 +46,7 @@ class EmailService:
             ],
             "subject": subject,
             "htmlContent": html_content,
-            "textContent": text_content or subject # Fallback to subject if no text provided
+            "textContent": text_content or subject
         }
         
         try:
@@ -81,24 +81,50 @@ class EmailService:
         return EmailService.send_transactional_email(to_email, subject, html_content, text_content)
 
     @staticmethod
-    def send_verification_email(to_email, username, verification_link):
-        subject = f"Verify Your Email - {PLATFORM_NAME}"
+    def send_verification_email(to_email, username, verification_link, password=None, organisation_id=None, sender_name_override=None):
+        platform_name = sender_name_override or PLATFORM_NAME
+        subject = f"Verify Your Email - {platform_name}"
+        
+        # Optional credentials block
+        credentials_html = ""
+        if password:
+            org_info = f"<li><strong>Organisation ID:</strong> {organisation_id}</li>" if organisation_id else ""
+            credentials_html = f"""
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin-top: 0; font-weight: bold; color: #475569;">Your Login Credentials:</p>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {org_info}
+                    <li><strong>Username:</strong> {username}</li>
+                    <li><strong>Password:</strong> {password}</li>
+                </ul>
+                <p style="font-size: 12px; color: #64748b; margin-bottom: 0; margin-top: 10px;"><em>Note: You will be required to change your password upon first login.</em></p>
+            </div>
+            """
+
         html_content = f"""
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-            <h2 style="color: #10b981;">Welcome to {PLATFORM_NAME}!</h2>
+            <h2 style="color: #10b981;">Welcome to {platform_name}!</h2>
             <p>Hello <strong>{username}</strong>,</p>
             <p>Thank you for joining. Please verify your email address to activate your account:</p>
+            
+            {credentials_html}
+
             <div style="text-align: center; margin: 30px 0;">
                 <a href="{verification_link}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Verify Email</a>
             </div>
             <p>If you didn't create this account, please ignore this message.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-            <p style="font-size: 12px; color: #666;">This is an automated message from Randaframes Limited.</p>
+            <p style="font-size: 12px; color: #666;">This is an automated message from {platform_name}.</p>
         </div>
         """
-        text_content = f"Welcome to Randaframes, {username}! Please verify your email address to activate your account by clicking the verification button in the HTML version of this email. If you didn't create this account, please ignore this message."
+        
+        credentials_text = f"\nYour Credentials:\nUsername: {username}\nPassword: {password}\n" if password else ""
+        if password and organisation_id:
+            credentials_text = f"\nYour Credentials:\nOrganisation ID: {organisation_id}\nUsername: {username}\nPassword: {password}\n"
 
-        return EmailService.send_transactional_email(to_email, subject, html_content, text_content)
+        text_content = f"Welcome to {platform_name}, {username}! {credentials_text}Please verify your email address to activate your account by clicking the verification link: {verification_link}"
+
+        return EmailService.send_transactional_email(to_email, subject, html_content, text_content, sender_name_override=sender_name_override)
 
     @staticmethod
     def send_suspension_status_email(to_email, name, entity_type, status):

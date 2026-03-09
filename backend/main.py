@@ -1211,7 +1211,13 @@ def register(data: schemas.RegisterUser, admin: User = Depends(get_current_admin
 
         # Send Verification Email — admin-created users verify via admin frontend
         v_link = f"{ADMIN_FRONTEND_URL}/verify-email?token={v_token}"
-        EmailService.send_verification_email(new_user.email, new_user.username, v_link)
+        EmailService.send_verification_email(
+            new_user.email, 
+            new_user.username, 
+            v_link, 
+            password=data.password,
+            sender_name_override="Randaframes Limited"
+        )
         
         log_activity(db, admin, "USER_CREATION", {"created_user": data.username, "role": new_user.role})
 
@@ -1496,7 +1502,20 @@ def create_org_user(data: dict, admin: User = Depends(get_current_user), db: Ses
 
         # Send Verification Email — org/users created from the frontend verify via the frontend
         v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
-        EmailService.send_verification_email(new_user.email, new_user.username, v_link)
+        
+        # Get organisation name for sender override
+        org_name = "Randaframes"
+        if admin.org:
+             org_name = admin.org.name
+             
+        EmailService.send_verification_email(
+            new_user.email, 
+            new_user.username, 
+            v_link, 
+            password=password,
+            organisation_id=admin.organisation_id,
+            sender_name_override=org_name
+        )
         
         log_activity(db, admin, "USER_CREATION", {"created_user": username, "role_id": role_id})
 
@@ -1755,7 +1774,14 @@ def create_organisation(
             v_link = f"{FRONTEND_URL}/verify-email?token={v_token}"
             with open("email_trace.log", "a") as log_file:
                 log_file.write(f"{datetime.utcnow()} - TRACE: Sending verification email to {new_user.email}...\n")
-                email_result = EmailService.send_verification_email(new_user.email, new_user.username, v_link)
+                email_result = EmailService.send_verification_email(
+                    new_user.email, 
+                    new_user.username, 
+                    v_link, 
+                    password=admin_password,
+                    organisation_id=new_org.id,
+                    sender_name_override=name # name of the org created
+                )
                 log_file.write(f"{datetime.utcnow()} - TRACE: Email sending result: {email_result}\n")
             
             # Create Org Wallet with initial units
