@@ -258,7 +258,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 # Centralized URLs for Email Links
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
 ADMIN_FRONTEND_URL = os.getenv("ADMIN_FRONTEND_URL", "http://localhost:5174").rstrip("/")
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://randaveri.onrender.com").rstrip("/")
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "default_secret_key_change_me")
 ALGORITHM = "HS256"

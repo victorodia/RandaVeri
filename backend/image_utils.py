@@ -17,11 +17,11 @@ def process_logo(file_stream, target_path, max_size=(300, 300)):
         if img.mode in ("RGBA", "P"):
             img = img.convert("RGB")
             
-        # Resize while maintaining aspect ratio
+        # Resize while maintaining aspect ratio, but also ensures it fits within 300x300
         img.thumbnail(max_size, Image.Resampling.LANCZOS)
         
-        # Save as optimized JPEG
-        img.save(target_path, "JPEG", optimize=True, quality=85)
+        # Save as optimized JPEG with lower quality for smaller file size
+        img.save(target_path, "JPEG", optimize=True, quality=70)
         return True
     except Exception as e:
         print(f"Error processing image: {e}")
