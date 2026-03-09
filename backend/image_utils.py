@@ -15,6 +15,10 @@ def process_logo(file_stream, target_path, max_size=(300, 300)):
         
         # Convert to RGB if necessary (e.g., handles RGBA/PNG transparency)
         if img.mode in ("RGBA", "P"):
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[3] if img.mode == "RGBA" else None)
+            img = background
+        else:
             img = img.convert("RGB")
             
         # Resize while maintaining aspect ratio, but also ensures it fits within 300x300

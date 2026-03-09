@@ -225,7 +225,7 @@ def init_db():
                     print("MIGRATION: subscription_plan column already exists")
                 
                 # Migration: Ensure all logo URLs use the production backend URL instead of localhost
-                prod_backend_url = "https://randaveri.onrender.com"
+                prod_backend_url = os.environ.get("BACKEND_URL", "https://randaveri.onrender.com").rstrip("/")
                 res = conn.execute(text("SELECT id, name, logo_url FROM organisations WHERE logo_url LIKE '%localhost:8000%'"))
                 local_logos = res.fetchall()
                 for org_id, org_name, logo_url in local_logos:
