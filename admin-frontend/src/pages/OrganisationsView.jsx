@@ -190,36 +190,46 @@ const OrganisationsView = ({
     };
 
     const handleDeleteOrganisation = (org) => {
+        // Step 1: Display the warning message first
         showDialog({
             type: 'confirm',
             title: `Delete Organisation`,
             message: `Are you sure you want to permanently delete ${org.name}? This action cannot be undone. IMPORTANT: Once deleted, this organisation name and slug cannot be used again. Consider suspending the organisation instead if you might need it later.`,
-            confirmText: `Delete Permanently`,
-            isPasswordRequired: true,
-            onConfirm: async (password) => {
-                if (!password) {
-                    showDialog({ type: 'error', title: 'Password Required', message: 'You must provide your administrator password to confirm this action.' });
-                    return;
-                }
-                try {
-                    const token = localStorage.getItem('token');
-                    const res = await axios.delete(`${API}/admin/organisations/${org.id}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                        data: { password }
-                    });
-                    showDialog({
-                        type: 'success',
-                        title: 'Organisation Deleted',
-                        message: res.data.message
-                    });
-                    fetchOrgs();
-                } catch (err) {
-                    showDialog({
-                        type: 'error',
-                        title: 'Deletion Failed',
-                        message: err.response?.data?.detail || "Action failed"
-                    });
-                }
+            confirmText: `I Understand, Continue`,
+            onConfirm: () => {
+                // Step 2: Show the password confirmation dialog ONLY after the first one is confirmed
+                showDialog({
+                    type: 'confirm',
+                    title: `Final Deletion Confirmation`,
+                    message: `Please enter your administrator password to permanently delete ${org.name}.`,
+                    confirmText: `Delete Permanently`,
+                    isPasswordRequired: true,
+                    onConfirm: async (password) => {
+                        if (!password) {
+                            showDialog({ type: 'error', title: 'Password Required', message: 'You must provide your administrator password to confirm this action.' });
+                            return;
+                        }
+                        try {
+                            const token = localStorage.getItem('token');
+                            const res = await axios.delete(`${API}/admin/organisations/${org.id}`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                                data: { password }
+                            });
+                            showDialog({
+                                type: 'success',
+                                title: 'Organisation Deleted',
+                                message: res.data.message
+                            });
+                            fetchOrgs();
+                        } catch (err) {
+                            showDialog({
+                                type: 'error',
+                                title: 'Deletion Failed',
+                                message: err.response?.data?.detail || "Action failed"
+                            });
+                        }
+                    }
+                });
             }
         });
     };
