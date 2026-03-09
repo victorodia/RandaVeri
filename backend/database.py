@@ -193,22 +193,35 @@ def get_db():
         db.close()
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
-    
+    print(f"DEBUG: init_db() starting on {SQLALCHEMY_DATABASE_URL[:20]}...")
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("DEBUG: Base.metadata.create_all completed")
+    except Exception as e:
+        print(f"ERROR: Base.metadata.create_all failed: {e}")
+        return
+
     # Auto-migration: check if subscription_date column exists
-    if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
+    if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
         from sqlalchemy import text
-        with engine.connect() as conn:
-            # Check for subscription_date
-            res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='organisations' AND column_name='subscription_date'"))
-            if not res.fetchone():
-                print("MIGRATION: Adding subscription_date column to organisations table")
-                conn.execute(text("ALTER TABLE organisations ADD COLUMN subscription_date TIMESTAMP"))
-                conn.commit()
-            
-            # Check for subscription_plan (just in case)
-            res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='organisations' AND column_name='subscription_plan'"))
-            if not res.fetchone():
-                print("MIGRATION: Adding subscription_plan column to organisations table")
-                conn.execute(text("ALTER TABLE organisations ADD COLUMN subscription_plan VARCHAR DEFAULT 'none'"))
-                conn.commit()
+        try:
+            with engine.connect() as conn:
+                # Check for subscription_date
+                res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='organisations' AND column_name='subscription_date'"))
+                if not res.fetchone():
+                    print("MIGRATION: Adding subscription_date column to organisations table")
+                    conn.execute(text("ALTER TABLE organisations ADD COLUMN subscription_date TIMESTAMP"))
+                    conn.commit()
+                else:
+                    print("MIGRATION: subscription_date column already exists")
+                
+                # Check for subscription_plan (just in case)
+                res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='organisations' AND column_name='subscription_plan'"))
+                if not res.fetchone():
+                    print("MIGRATION: Adding subscription_plan column to organisations table")
+                    conn.execute(text("ALTER TABLE organisations ADD COLUMN subscription_plan VARCHAR DEFAULT 'none'"))
+                    conn.commit()
+                else:
+                    print("MIGRATION: subscription_plan column already exists")
+        except Exception as e:
+            print(f"ERROR: Auto-migration failed: {e}")
