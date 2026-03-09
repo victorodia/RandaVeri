@@ -1207,11 +1207,19 @@ def register(data: schemas.RegisterUser, admin: User = Depends(get_current_admin
 
         # Send Verification Email — admin-created users verify via admin frontend
         v_link = f"{ADMIN_FRONTEND_URL}/verify-email?token={v_token}"
+        
+        # Resolve organisation slug for the email
+        org_slug = None
+        org = db.query(Organisation).filter(Organisation.id == org_id).first()
+        if org:
+            org_slug = org.slug
+
         EmailService.send_verification_email(
             new_user.email, 
             new_user.username, 
             v_link, 
             password=data.password,
+            organisation_id=org_slug,
             sender_name_override="Randaframes Limited"
         )
         
@@ -1502,15 +1510,17 @@ def create_org_user(data: dict, admin: User = Depends(get_current_user), db: Ses
         
         # Get organisation name for sender override
         org_name = "Randaframes"
+        org_slug = str(admin.organisation_id) # Fallback
         if admin.org:
              org_name = admin.org.name
+             org_slug = admin.org.slug
              
         EmailService.send_verification_email(
             new_user.email, 
             new_user.username, 
             v_link, 
             password=password,
-            organisation_id=admin.organisation_id,
+            organisation_id=org_slug,
             sender_name_override=org_name
         )
         
@@ -1784,7 +1794,7 @@ def create_organisation(
                     new_user.username, 
                     v_link, 
                     password=admin_password,
-                    organisation_id=new_org.id,
+                    organisation_id=new_org.slug,
                     sender_name_override=name # name of the org created
                 )
                 log_file.write(f"{datetime.utcnow()} - TRACE: Email sending result: {email_result}\n")
