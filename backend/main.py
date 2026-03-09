@@ -1,15 +1,8 @@
-try:
-    from .database import SessionLocal, engine, User, Wallet, Transaction, Config, RevokedToken, init_db, get_db, Organisation, ActivityLog, Tier, AdminRole, PasswordResetToken, EmailVerificationToken
-    from .crypto import crypto_service
-    from .email_service import EmailService
-    from .image_utils import process_logo
-    from . import schemas
-except (ImportError, ValueError):
-    from database import SessionLocal, engine, User, Wallet, Transaction, Config, RevokedToken, init_db, get_db, Organisation, ActivityLog, Tier, AdminRole, PasswordResetToken, EmailVerificationToken
-    from crypto import crypto_service
-    from email_service import EmailService
-    from image_utils import process_logo
-    import schemas
+from database import SessionLocal, engine, User, Wallet, Transaction, Config, RevokedToken, init_db, get_db, Organisation, ActivityLog, Tier, AdminRole, PasswordResetToken, EmailVerificationToken
+from crypto import crypto_service
+from email_service import EmailService
+from image_utils import process_logo
+import schemas
 from passlib.context import CryptContext
 import requests
 import secrets
