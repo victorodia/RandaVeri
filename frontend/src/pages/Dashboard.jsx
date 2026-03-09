@@ -580,7 +580,7 @@ const Dashboard = () => {
                             {isExpired ? "Subscription Expired" : "Yearly Access Required"}
                         </h1>
                         <p className="text-xl text-premium-secondary">
-                            Your organisation <span className="text-premium-text font-bold">{user.organisation?.name}</span> {isExpired ? "subscription has ended" : "needs an active yearly subscription"} to enable services.
+                            Your organisation <span className="text-premium-text font-bold">{user?.organisation?.name || 'Your Organisation'}</span> {isExpired ? "subscription has ended" : "needs an active yearly subscription"} to enable services.
                         </p>
                     </div>
 

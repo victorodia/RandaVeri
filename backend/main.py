@@ -643,6 +643,7 @@ def get_me(user: User = Depends(get_current_user)):
             "custom_unit_cost": org.custom_unit_cost,
             "tier_name": org.tier.name if org.tier else "Tier 1",
             "tier_default_cost": org.tier.default_unit_cost if org.tier else 100.0,
+            "subscription_price": org.subscription_price,
             "is_suspended": org.is_suspended
         } if org else None
     }
