@@ -194,3 +194,21 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    
+    # Auto-migration: check if subscription_date column exists
+    if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            # Check for subscription_date
+            res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='organisations' AND column_name='subscription_date'"))
+            if not res.fetchone():
+                print("MIGRATION: Adding subscription_date column to organisations table")
+                conn.execute(text("ALTER TABLE organisations ADD COLUMN subscription_date TIMESTAMP"))
+                conn.commit()
+            
+            # Check for subscription_plan (just in case)
+            res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='organisations' AND column_name='subscription_plan'"))
+            if not res.fetchone():
+                print("MIGRATION: Adding subscription_plan column to organisations table")
+                conn.execute(text("ALTER TABLE organisations ADD COLUMN subscription_plan VARCHAR DEFAULT 'none'"))
+                conn.commit()
