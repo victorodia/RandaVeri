@@ -45,14 +45,18 @@ export const DialogProvider = ({ children }) => {
     }, []);
 
     const handleConfirm = () => {
-        if (dialog.onConfirm) {
-            if (dialog.isPasswordRequired) {
-                dialog.onConfirm(dialog.password);
+        const { onConfirm, isPasswordRequired, password } = dialog;
+
+        // Close the current dialog first to allow a new one to be opened by onConfirm
+        closeDialog();
+
+        if (onConfirm) {
+            if (isPasswordRequired) {
+                onConfirm(password);
             } else {
-                dialog.onConfirm();
+                onConfirm();
             }
         }
-        closeDialog();
     };
 
     const handleCancel = () => {
