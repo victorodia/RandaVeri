@@ -15,13 +15,18 @@ PROJECT_ROOT = os.path.dirname(BASE_DIR)
 DEFAULT_DB_PATH = os.path.join(PROJECT_ROOT, "randaframes.db")
 
 # Use PostgreSQL if DATABASE_URL is provided, otherwise fall back to SQLite
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
+SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Fix for Render/Postgres: ensure the URL starts with postgresql://
-if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-print(f"DATABASE: Using {'PostgreSQL' if SQLALCHEMY_DATABASE_URL.startswith('postgresql') else 'SQLite'}")
+if SQLALCHEMY_DATABASE_URL:
+    # Fix for Render/Postgres: ensure the URL starts with postgresql://
+    if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+        SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    print(f"DATABASE: Using PostgreSQL (Detected from environment)")
+else:
+    PROJECT_ROOT = os.path.dirname(BASE_DIR)
+    DEFAULT_DB_PATH = os.path.join(PROJECT_ROOT, "randaframes.db")
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{DEFAULT_DB_PATH}"
+    print(f"DATABASE: Using SQLite (Fallback to local file: {DEFAULT_DB_PATH})")
 
 engine_args = {"check_same_thread": False, "timeout": 60} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
 
