@@ -193,7 +193,7 @@ const OrganisationsView = ({
         showDialog({
             type: 'confirm',
             title: `Delete Organisation`,
-            message: `Are you sure you want to permanently delete ${org.name}? This action cannot be undone. All users in this organisation will be suspended.`,
+            message: `Are you sure you want to permanently delete ${org.name}? This action cannot be undone. IMPORTANT: Once deleted, this organisation name and slug cannot be used again. Consider suspending the organisation instead if you might need it later.`,
             confirmText: `Delete Permanently`,
             isPasswordRequired: true,
             onConfirm: async (password) => {
@@ -314,8 +314,8 @@ const OrganisationsView = ({
                                 <span className="text-premium-accent">{org.slug}</span>
                                 <div className="flex gap-2">
                                     <span className={`px-2 py-0.5 rounded border ${org.subscription_status === 'active' && (!org.subscription_expiry || new Date(org.subscription_expiry) > new Date())
-                                            ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20'
-                                            : 'bg-status-red/10 text-status-red border-status-red/20'
+                                        ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20'
+                                        : 'bg-status-red/10 text-status-red border-status-red/20'
                                         }`}>
                                         {org.subscription_status === 'active' && (!org.subscription_expiry || new Date(org.subscription_expiry) > new Date()) ? 'Active' : 'Expired'}
                                     </span>
