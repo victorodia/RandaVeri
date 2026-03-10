@@ -73,7 +73,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-premium-surface/60 backdrop-blur-xl border border-premium-border rounded-2xl p-6 shadow-2xl hover:border-premium-primary/40 hover:shadow-premium-primary/5 transition-all duration-300;
+    @apply bg-premium-surface/60 backdrop-blur-xl border border-premium-border rounded-2xl p-4 sm:p-6 shadow-2xl hover:border-premium-primary/40 hover:shadow-premium-primary/5 transition-all duration-300;
   }
 
   :root:not(.light) .glass-card {
@@ -90,6 +90,28 @@
 
   .premium-gradient {
     @apply bg-gradient-to-br from-premium-primary via-blue-600 to-indigo-700;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Responsive Typography */
+  h1 {
+    @apply text-2xl sm:text-3xl lg:text-4xl;
+  }
+
+  h2 {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+
+  h3 {
+    @apply text-lg sm:text-xl lg:text-2xl;
   }
 
   /* Scrollbar Polish */

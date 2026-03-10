@@ -73,12 +73,12 @@ const AnalyticsView = () => {
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 bg-premium-bg/30 p-1.5 rounded-2xl border border-premium-border/50">
+                <div className="flex flex-wrap lg:flex-nowrap gap-2 bg-premium-bg/30 p-1.5 rounded-2xl border border-premium-border/50 overflow-x-auto hide-scrollbar">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-300 ${activeTab === tab.id
+                            className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-xs font-black transition-all duration-300 whitespace-nowrap ${activeTab === tab.id
                                 ? 'bg-premium-primary text-white shadow-[0_4px_15px_rgba(59,130,246,0.3)]'
                                 : 'text-premium-secondary hover:text-premium-text hover:bg-premium-border/10'}`}
                         >
@@ -86,18 +86,20 @@ const AnalyticsView = () => {
                             {tab.label}
                         </button>
                     ))}
-                    <div className="w-[1px] h-6 bg-premium-border/30 mx-2 self-center lg:block hidden" />
-                    {[7, 30].map(d => (
-                        <button
-                            key={d}
-                            onClick={() => setDays(d)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all ${days === d
-                                ? 'bg-premium-secondary/20 text-premium-text'
-                                : 'text-premium-secondary hover:text-premium-text'}`}
-                        >
-                            {d}D
-                        </button>
-                    ))}
+                    <div className="w-[1px] h-6 bg-premium-border/30 mx-2 self-center hidden lg:block" />
+                    <div className="flex gap-1 ml-auto lg:ml-0">
+                        {[7, 30].map(d => (
+                            <button
+                                key={d}
+                                onClick={() => setDays(d)}
+                                className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-xs font-black transition-all ${days === d
+                                    ? 'bg-premium-secondary/20 text-premium-text'
+                                    : 'text-premium-secondary hover:text-premium-text'}`}
+                            >
+                                {d}D
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -131,21 +133,21 @@ const OverviewTab = ({ data, health, days }) => {
                 <Zap size={14} className="text-premium-secondary" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard icon={<TrendingUp />} label="Growth" value={`${summary.growth_rate || 0}%`} sub={`Past ${days} days`} trend={summary.growth_rate >= 0 ? 'up' : 'down'} color="blue" />
-                <MetricCard icon={<Zap />} label="Success" value={`${summary.success_rate || 0}%`} sub="Validation Accuracy" color="emerald" />
-                <MetricCard icon={<Clock />} label="Peak Hour" value={summary.peak_hour || 'N/A'} sub="Busiest Slot (GMT)" color="purple" />
-                <MetricCard icon={<Activity />} label="Volume" value={summary.this_period_validations?.toLocaleString() || '0'} sub="Total Validations" color="amber" />
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <MetricCard icon={<TrendingUp size={18} />} label="Growth" value={`${summary.growth_rate || 0}%`} sub={`Past ${days} days`} trend={summary.growth_rate >= 0 ? 'up' : 'down'} color="blue" />
+                <MetricCard icon={<Zap size={18} />} label="Success" value={`${summary.success_rate || 0}%`} sub="Validation Accuracy" color="emerald" />
+                <MetricCard icon={<Clock size={18} />} label="Peak Hour" value={summary.peak_hour || 'N/A'} sub="Busiest Slot (GMT)" color="purple" />
+                <MetricCard icon={<Activity size={18} />} label="Volume" value={summary.this_period_validations?.toLocaleString() || '0'} sub="Total Validations" color="amber" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="glass-card p-8">
-                    <h3 className="text-lg font-black mb-8 flex items-center gap-3"><div className="h-2 w-2 bg-premium-primary rounded-full shadow-[0_0_10px_#3B82F6]" />Usage Trends</h3>
-                    <div className="h-[350px]"><UsageChart data={trends} /></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <div className="glass-card !p-4 sm:!p-8">
+                    <h3 className="text-base sm:text-lg font-black mb-6 sm:mb-8 flex items-center gap-3"><div className="h-2 w-2 bg-premium-primary rounded-full shadow-[0_0_10px_#3B82F6]" />Usage Trends</h3>
+                    <div className="h-[250px] sm:h-[350px]"><UsageChart data={trends} /></div>
                 </div>
-                <div className="glass-card p-8">
-                    <h3 className="text-lg font-black mb-8 flex items-center gap-3"><div className="h-2 w-2 bg-emerald-500 rounded-full shadow-[0_0_10px_#10B981]" />Top Organisations</h3>
-                    <div className="h-[350px]"><OrgVolumeChart data={org_breakdown} /></div>
+                <div className="glass-card !p-4 sm:!p-8">
+                    <h3 className="text-base sm:text-lg font-black mb-6 sm:mb-8 flex items-center gap-3"><div className="h-2 w-2 bg-emerald-500 rounded-full shadow-[0_0_10px_#10B981]" />Top Organisations</h3>
+                    <div className="h-[250px] sm:h-[350px]"><OrgVolumeChart data={org_breakdown} /></div>
                 </div>
             </div>
         </div>
@@ -392,28 +394,30 @@ const HeatmapChart = ({ data }) => {
     }, {});
 
     return (
-        <div className="flex flex-col gap-2">
-            {dOrder.map(day => (
-                <div key={day} className="flex gap-2 items-center group">
-                    <span className="w-10 text-[10px] font-black text-premium-secondary uppercase group-hover:text-premium-primary transition-colors">{day}</span>
-                    <div className="flex-1 flex gap-1.5 translate-y-0.5">
-                        {hours.map(hour => {
-                            const val = lookup[`${day}-${hour}`] || 0;
-                            return (
-                                <div
-                                    key={hour}
-                                    className="flex-1 h-9 rounded-sm transition-all duration-300 hover:scale-110 hover:z-10 hover:shadow-[0_0_15px_rgba(139,92,246,0.4)] cursor-pointer"
-                                    style={{
-                                        backgroundColor: '#8B5CF6',
-                                        opacity: val === 0 ? 0.04 : (0.15 + (val / maxVal) * 0.85)
-                                    }}
-                                    title={`${day} ${hour}:00 | Activity: ${val}`}
-                                />
-                            );
-                        })}
+        <div className="overflow-x-auto hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex flex-col gap-2 min-w-[600px] lg:min-w-0">
+                {dOrder.map(day => (
+                    <div key={day} className="flex gap-2 items-center group">
+                        <span className="w-10 text-[10px] font-black text-premium-secondary uppercase group-hover:text-premium-primary transition-colors">{day}</span>
+                        <div className="flex-1 flex gap-1.5 translate-y-0.5">
+                            {hours.map(hour => {
+                                const val = lookup[`${day}-${hour}`] || 0;
+                                return (
+                                    <div
+                                        key={hour}
+                                        className="flex-1 h-9 rounded-sm transition-all duration-300 hover:scale-110 hover:z-10 hover:shadow-[0_0_15px_rgba(139,92,246,0.4)] cursor-pointer"
+                                        style={{
+                                            backgroundColor: '#8B5CF6',
+                                            opacity: val === 0 ? 0.04 : (0.15 + (val / maxVal) * 0.85)
+                                        }}
+                                        title={`${day} ${hour}:00 | Activity: ${val}`}
+                                    />
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
-            ))}
+                ))}
+            </div>
         </div>
     );
 };

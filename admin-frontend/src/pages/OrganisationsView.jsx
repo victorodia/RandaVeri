@@ -235,18 +235,18 @@ const OrganisationsView = ({
     };
 
     return (
-        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-            <div className="flex justify-between items-center glass-card p-6 bg-white/5 mx-[-1rem] sm:mx-0">
-                <div>
-                    <h2 className="text-2xl font-bold">Organisations</h2>
-                    <p className="text-premium-secondary">Manage multi-tenant workspaces and branding</p>
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500 pb-20">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center glass-card !p-4 sm:!p-6 bg-white/5 mx-[-1rem] sm:mx-0 gap-4 sm:gap-6">
+                <div className="min-w-0">
+                    <h2 className="text-xl sm:text-2xl font-bold truncate">Organisations</h2>
+                    <p className="text-premium-secondary text-sm">Manage multi-tenant workspaces and branding</p>
                 </div>
-                <div className="flex gap-4">
-                    <div className="relative w-64 hidden sm:block">
-                        <Search className="absolute left-3 top-2.5 text-premium-secondary" size={18} />
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64 order-2 sm:order-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-premium-secondary" size={18} />
                         <input
                             type="text"
-                            className="input-field w-full pl-10 h-10"
+                            className="input-field w-full pl-10 h-10 py-2"
                             placeholder="Filter organisations..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -266,7 +266,7 @@ const OrganisationsView = ({
                                 });
                                 setIsModalOpen(true);
                             }}
-                            className="btn-primary flex items-center gap-2 px-6 py-2"
+                            className="btn-primary flex items-center justify-center gap-2 px-6 py-2 h-10 order-1 sm:order-2 w-full sm:w-auto whitespace-nowrap"
                         >
                             <Plus size={20} /> New Organisation
                         </button>

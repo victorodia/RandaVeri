@@ -117,20 +117,20 @@ const AuditLogsView = ({
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="p-6 glass-card space-y-4 bg-premium-overlay">
-                <div className="flex justify-between items-center">
+            <div className="p-4 sm:p-6 glass-card space-y-4 bg-premium-overlay mx-[-1rem] sm:mx-0">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h2 className="text-xl font-bold flex items-center gap-2">
                         <FileText className="text-premium-primary" />
                         Transaction Audit Logs
                     </h2>
-                    <button onClick={fetchLogs} className="btn-secondary flex items-center gap-2 py-2 px-4 shadow-sm">
+                    <button onClick={fetchLogs} className="btn-secondary flex items-center justify-center gap-2 py-2 px-4 shadow-sm w-full sm:w-auto">
                         <RefreshCcw size={18} className={loading ? "animate-spin" : ""} />
                         Refresh
                     </button>
                 </div>
 
                 {/* Filter Bar */}
-                <div className={`grid grid-cols-1 md:grid-cols-2 ${isSuperAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4 pt-4 border-t border-premium-border/50`}>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${isSuperAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4 pt-4 border-t border-premium-border/50`}>
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold text-premium-secondary uppercase">Start Date</label>
                         <input
@@ -175,7 +175,7 @@ const AuditLogsView = ({
                     </div>
                     <div className="flex items-end gap-2">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-2.5 text-premium-secondary" size={18} />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-premium-secondary" size={16} />
                             <input
                                 type="text"
                                 className="input-field w-full pl-10 h-10 text-xs"
@@ -186,7 +186,7 @@ const AuditLogsView = ({
                         </div>
                         <button
                             onClick={clearFilters}
-                            className="p-2.5 bg-status-red/10 text-status-red hover:bg-status-red/20 rounded-lg transition-colors border border-status-red/20"
+                            className="p-2 sm:p-2.5 bg-status-red/10 text-status-red hover:bg-status-red/20 rounded-lg transition-colors border border-status-red/20 h-10 flex items-center justify-center shrink-0"
                             title="Clear All Filters"
                         >
                             <X className="w-5 h-5" />

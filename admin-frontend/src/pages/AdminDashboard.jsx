@@ -5,7 +5,8 @@ import {
     Users, Wallet, Globe, Shield, RefreshCcw,
     FileText, TrendingUp, Settings, Activity,
     LogOut, Database, Loader2, Zap, Building2, Layers,
-    TrendingDown, ArrowUpRight, AlertCircle, History, Trophy
+    TrendingDown, ArrowUpRight, AlertCircle, History, Trophy,
+    Menu as MenuIcon, X as CloseIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UsersView from './UsersView';
@@ -49,6 +50,7 @@ const AdminDashboard = () => {
     const { logout } = useAuth();
     const token = localStorage.getItem('token');
     const [platformName, setPlatformName] = useState('Admin Portal');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const headers = { Authorization: `Bearer ${token}` };
 
     const fetchData = async () => {
@@ -241,25 +243,28 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="min-h-screen bg-premium-bg text-premium-text pb-20">
+        <div className="min-h-screen bg-premium-bg text-premium-text pb-20 overflow-x-hidden">
             {/* Top Navigation Bar */}
             <div className="border-b border-premium-border bg-premium-surface/30 backdrop-blur-md sticky top-0 z-40">
-                <div className="max-w-[1600px] mx-auto px-8 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         <div className="h-10 w-10 bg-premium-primary/10 rounded-xl overflow-hidden flex items-center justify-center border border-premium-primary/20">
                             <img src="/logo.jpeg" alt="Logo" className="h-full w-full object-cover" />
                         </div>
-                        <div>
-                            <h1 className="text-xl font-bold tracking-tight">{platformName} <span className="text-premium-primary">Admin</span></h1>
+                        <div className="hidden xsm:block">
+                            <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate max-w-[150px] sm:max-w-none">
+                                {platformName} <span className="text-premium-primary">Admin</span>
+                            </h1>
                             <div className="flex items-center gap-2">
-                                <span className={`h-2 w-2 rounded-full ${health?.status === 'Healthy' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                <span className="text-[10px] text-premium-secondary uppercase tracking-widest font-bold">System Online • {health?.latency_ms}ms</span>
+                                <span className={`h-1.5 w-1.5 rounded-full ${health?.status === 'Healthy' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                <span className="text-[8px] sm:text-[10px] text-premium-secondary uppercase tracking-widest font-bold">Online • {health?.latency_ms}ms</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="flex bg-premium-bg rounded-xl p-1 border border-premium-border shadow-inner">
+                    <div className="flex items-center gap-2 sm:gap-6">
+                        {/* Desktop Tabs */}
+                        <div className="hidden lg:flex bg-premium-bg rounded-xl p-1 border border-premium-border shadow-inner">
                             {TAB_ACCESS.map(tab => (
                                 <TabButton
                                     key={tab.id}
@@ -271,20 +276,54 @@ const AdminDashboard = () => {
                             ))}
                         </div>
 
-                        <ThemeToggle />
-
-                        <div className="h-8 w-[1px] bg-premium-border mx-2" />
-
-                        <button onClick={logout} className="p-2.5 hover:bg-red-500/10 text-red-500 rounded-xl transition-all border border-transparent hover:border-red-500/20 group">
-                            <LogOut size={20} className="group-hover:translate-x-0.5 transition-transform" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <ThemeToggle />
+                            <div className="h-6 w-[1px] bg-premium-border mx-1 hidden sm:block" />
+                            <button
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                className="lg:hidden p-2.5 bg-premium-surface/50 border border-premium-border rounded-xl text-premium-text hover:bg-premium-overlay transition-all"
+                            >
+                                {isMenuOpen ? <CloseIcon size={20} /> : <MenuIcon size={20} />}
+                            </button>
+                            <button onClick={logout} className="p-2.5 hover:bg-red-500/10 text-red-500 rounded-xl transition-all border border-transparent hover:border-red-500/20 group hidden sm:flex">
+                                <LogOut size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                {/* Mobile Navigation Dropdown */}
+                {isMenuOpen && (
+                    <div className="lg:hidden bg-premium-surface border-b border-premium-border animate-in slide-in-from-top duration-300">
+                        <div className="p-4 grid grid-cols-2 gap-2">
+                            {TAB_ACCESS.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => { setActiveTab(tab.id); setIsMenuOpen(false); }}
+                                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-xs font-bold transition-all border ${activeTab === tab.id
+                                        ? 'bg-premium-primary/10 border-premium-primary text-premium-primary'
+                                        : 'bg-premium-bg border-premium-border text-premium-secondary hover:text-premium-text'
+                                        }`}
+                                >
+                                    {React.cloneElement(tab.icon, { size: 20 })}
+                                    {tab.label}
+                                </button>
+                            ))}
+                            <button
+                                onClick={logout}
+                                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-xs font-bold bg-red-500/5 border border-red-500/20 text-red-500 col-span-2 mt-2"
+                            >
+                                <LogOut size={20} />
+                                Logout Session
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            <div className="max-w-[1600px] mx-auto px-8 py-10">
-                {/* Stats Summary - Always Visible */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-10">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-6 sm:py-10">
+                {/* Stats Summary - Optimized for all screens */}
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4 mb-6 sm:mb-10">
                     <SummaryCard
                         icon={<Users />}
                         label="Total Users"
@@ -346,7 +385,7 @@ const AdminDashboard = () => {
 
                 {/* Main Content Area */}
                 <main>
-                    <div className="flex-1 overflow-y-auto p-8">
+                    <div className="flex-1 overflow-y-auto p-0 sm:p-2 lg:p-8">
                         {TAB_ACCESS.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-24 text-center">
                                 <div className="p-4 bg-premium-primary/10 rounded-full mb-4">
@@ -419,23 +458,23 @@ const SummaryCard = ({ icon, label, value, color, trend, onClick, alert }) => {
     return (
         <div
             onClick={onClick}
-            className={`glass-card p-6 border-b-2 border-b-transparent hover:border-b-premium-primary transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''} ${alert ? 'animate-pulse border-red-500/50' : ''}`}
+            className={`glass-card !p-4 sm:!p-6 border-b-2 border-b-transparent hover:border-b-premium-primary transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''} ${alert ? 'animate-pulse border-red-500/50' : ''}`}
         >
-            <div className="flex items-start justify-between">
-                <div>
-                    <p className="text-premium-secondary text-[10px] uppercase tracking-widest font-bold mb-1">{label}</p>
-                    <p className={`text-2xl font-bold tabular-nums ${alert ? 'text-red-500' : ''}`}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                    <p className="text-premium-secondary text-[8px] sm:text-[10px] uppercase tracking-widest font-bold mb-1 truncate">{label}</p>
+                    <p className={`text-lg sm:text-2xl font-bold tabular-nums truncate ${alert ? 'text-red-500' : ''}`}>
                         {typeof value === 'number' ? value.toLocaleString() : (value || '0')}
                     </p>
                     {trend && (
-                        <div className="flex items-center gap-1 mt-2">
+                        <div className="flex items-center gap-1 mt-1 sm:mt-2">
                             <TrendingUp size={10} className={alert ? 'text-red-500' : 'text-premium-accent'} />
-                            <p className={`text-[10px] font-bold uppercase ${alert ? 'text-red-500' : 'text-premium-accent'}`}>{trend}</p>
+                            <p className={`text-[8px] sm:text-[10px] font-bold uppercase truncate ${alert ? 'text-red-500' : 'text-premium-accent'}`}>{trend}</p>
                         </div>
                     )}
                 </div>
-                <div className={`h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors[color] || colors.blue}`}>
-                    {React.cloneElement(icon, { size: 20 })}
+                <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shrink-0 ${colors[color] || colors.blue}`}>
+                    {React.cloneElement(icon, { size: 18 })}
                 </div>
             </div>
             {alert && (

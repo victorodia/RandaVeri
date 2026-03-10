@@ -267,35 +267,35 @@ const UsersView = ({
     return (
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
             {/* Toolbar */}
-            <div className="glass-card p-4 flex flex-wrap justify-between items-center gap-4 bg-premium-overlay border-b-2 border-premium-primary/20">
-                <div className="flex items-center gap-6">
+            <div className="glass-card !p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-premium-overlay border-b-2 border-premium-primary/20 mx-[-1rem] sm:mx-0">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6 w-full sm:w-auto">
                     <button onClick={toggleSelectAll} className="flex items-center gap-2 text-sm text-premium-secondary hover:text-premium-text transition-colors">
-                        {selectedUsers.length === filteredUsers.length && filteredUsers.length > 0 ? <CheckSquare size={20} className="text-premium-primary" /> : <Square size={20} />}
-                        <span className="font-bold">{selectedUsers.length} Selected</span>
+                        {selectedUsers.length === filteredUsers.length && filteredUsers.length > 0 ? <CheckSquare size={18} className="text-premium-primary" /> : <Square size={18} />}
+                        <span className="font-bold text-xs sm:text-sm">{selectedUsers.length} Selected</span>
                     </button>
 
                     {selectedUsers.length > 0 && canBulk && (
                         <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
-                            <div className="h-6 w-[1px] bg-premium-border mx-2" />
-                            <button onClick={() => handleHandleBulkAction('activate')} className="px-3 py-1.5 rounded-lg bg-status-emerald/10 text-status-emerald text-xs font-bold hover:bg-status-emerald/20 transition-colors uppercase tracking-wider">Activate</button>
-                            <button onClick={() => handleHandleBulkAction('block')} className="px-3 py-1.5 rounded-lg bg-status-red/10 text-status-red text-xs font-bold hover:bg-status-red/20 transition-colors uppercase tracking-wider">Suspend</button>
-                            <button onClick={() => handleHandleBulkAction('topup')} className="px-3 py-1.5 rounded-lg bg-premium-primary/10 text-premium-primary text-xs font-bold hover:bg-premium-primary/20 transition-colors uppercase tracking-wider">Bulk Topup</button>
+                            <div className="h-6 w-[1px] bg-premium-border mx-1" />
+                            <button onClick={() => handleHandleBulkAction('activate')} className="px-2 sm:px-3 py-1.5 rounded-lg bg-status-emerald/10 text-status-emerald text-[10px] sm:text-xs font-bold hover:bg-status-emerald/20 transition-colors uppercase tracking-wider">Activate</button>
+                            <button onClick={() => handleHandleBulkAction('block')} className="px-2 sm:px-3 py-1.5 rounded-lg bg-status-red/10 text-status-red text-[10px] sm:text-xs font-bold hover:bg-status-red/20 transition-colors uppercase tracking-wider">Suspend</button>
+                            <button onClick={() => handleHandleBulkAction('topup')} className="px-2 sm:px-3 py-1.5 rounded-lg bg-premium-primary/10 text-premium-primary text-[10px] sm:text-xs font-bold hover:bg-premium-primary/20 transition-colors uppercase tracking-wider">Topup</button>
                         </div>
                     )}
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="relative">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-premium-secondary" />
                         <input
                             type="text"
-                            placeholder="Search by name or email..."
-                            className="input-field pl-9 py-2 text-sm w-64"
+                            placeholder="Search users..."
+                            className="input-field pl-9 py-2 text-sm w-full h-10"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                     {canCreate && (
-                        <button onClick={() => { setNewUser(emptyNew); setIsCreateModalOpen(true); }} className="btn-primary flex items-center gap-2 py-2 px-6 text-sm">
+                        <button onClick={() => { setNewUser(emptyNew); setIsCreateModalOpen(true); }} className="btn-primary flex items-center justify-center gap-2 py-2 px-6 text-sm h-10 w-full sm:w-auto">
                             <Plus size={16} /> New User
                         </button>
                     )}
