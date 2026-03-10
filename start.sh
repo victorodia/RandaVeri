@@ -1,4 +1,5 @@
 #!/bin/bash
+# Deployment Trigger: Railway Nixpacks Fix v2
 echo "--- ENVIRONMENT DIAGNOSTICS ---"
 echo "Binary Paths:"
 which python3 || echo "python3 not in path"
