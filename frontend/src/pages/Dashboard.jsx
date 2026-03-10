@@ -665,25 +665,49 @@ const Dashboard = () => {
                             </button>
                         </div>
 
-                        <nav className="flex-1 space-y-2">
+                        <nav className="flex-1 space-y-2 text-sm">
                             {(user?.role?.includes('admin') || user?.role?.includes('IDENTITY')) && (
-                                <NavItem icon={<LayoutDashboard size={20} />} label="Verification" active={activeTab === 'verify'} onClick={() => { setActiveTab('verify'); setIsSidebarOpen(false); }} />
+                                <NavItem icon={<LayoutDashboard size={18} />} label="Verification" active={activeTab === 'verify'} onClick={() => { setActiveTab('verify'); setIsSidebarOpen(false); }} />
                             )}
                             {(user?.role?.includes('admin') || user?.role?.includes('WALLET')) && (
-                                <NavItem icon={<History size={20} />} label="History" active={activeTab === 'history'} onClick={() => { setActiveTab('history'); setIsSidebarOpen(false); }} />
+                                <NavItem icon={<History size={18} />} label="History" active={activeTab === 'history'} onClick={() => { setActiveTab('history'); setIsSidebarOpen(false); }} />
                             )}
                             {(user?.role?.includes('org_admin')) && (
-                                <NavItem icon={<Users size={20} />} label="Team" active={activeTab === 'team'} onClick={() => { setActiveTab('team'); setIsSidebarOpen(false); }} />
+                                <>
+                                    <NavItem icon={<Users size={18} />} label="Team" active={activeTab === 'team'} onClick={() => { setActiveTab('team'); setIsSidebarOpen(false); }} />
+                                    <NavItem icon={<Palette size={18} />} label="Branding" active={activeTab === 'branding'} onClick={() => { setActiveTab('branding'); setIsSidebarOpen(false); }} />
+                                </>
                             )}
-                            <NavItem icon={<FileText size={20} />} label="Audit Logs" active={activeTab === 'audit'} onClick={() => { setActiveTab('audit'); setIsSidebarOpen(false); }} />
+                            <NavItem icon={<FileText size={18} />} label="Audit Logs" active={activeTab === 'audit'} onClick={() => { setActiveTab('audit'); setIsSidebarOpen(false); }} />
                             {/* ONLY Super Admin sees Control Center */}
                             {user?.role === 'admin' && (
                                 <Link to="/admin" className="w-full flex items-center gap-3 p-3 rounded-lg text-premium-accent hover:text-premium-text hover:bg-premium-overlay transition-all mt-4 border border-premium-accent/20">
-                                    <Shield size={20} />
+                                    <Shield size={18} />
                                     <span className="font-medium">Control Center</span>
                                 </Link>
                             )}
                         </nav>
+
+                        {/* Subscription Info in Sidebar */}
+                        {isOrgAdmin && (
+                            <div className="mt-6 p-4 bg-premium-overlay rounded-xl border border-premium-border/40 space-y-3">
+                                <div className="flex justify-between items-center text-[10px] uppercase font-bold text-premium-secondary">
+                                    <span>Subscription</span>
+                                    <span className={`px-2 py-0.5 rounded-full border ${isExpired
+                                        ? 'bg-status-red/10 text-status-red border-status-red/20'
+                                        : (isSubscriptionActive ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20' : 'bg-premium-secondary/10 text-premium-secondary border-premium-secondary/20')
+                                        }`}>
+                                        {isExpired ? 'Expired' : (isSubscriptionActive ? 'Active' : 'Inactive')}
+                                    </span>
+                                </div>
+                                {user?.organisation?.subscription_expiry && (
+                                    <div className="flex items-center gap-2 text-[10px] text-premium-text font-medium">
+                                        <Calendar size={12} className="text-premium-secondary" />
+                                        <span>License Expires: <span className="font-mono">{new Date(user.organisation.subscription_expiry).toLocaleDateString('en-GB')}</span></span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <button onClick={handleLogout} className="mt-auto flex items-center gap-3 text-premium-secondary hover:text-premium-text p-2">
                             <LogOut size={20} />
