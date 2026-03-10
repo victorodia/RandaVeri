@@ -282,7 +282,7 @@ const OrganisationsView = ({
                         className={`glass-card group hover:border-premium-primary/50 transition-all p-6 space-y-4 cursor-pointer relative overflow-hidden ${org.is_suspended ? 'border-status-red/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}
                     >
                         <div className="flex justify-between items-start">
-                            <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center p-2">
+                            <div className="h-12 w-12 rounded-xl bg-white flex items-center justify-center p-1 border border-premium-border/30 shadow-sm">
                                 {org.logo_url ? <img src={org.logo_url} className="h-full w-full object-contain" /> : <Building2 size={24} className="text-premium-secondary" />}
                             </div>
                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -444,7 +444,7 @@ const OrganisationsView = ({
                     <div className="glass-card max-w-2xl w-full p-0 overflow-hidden">
                         <div className="h-24 w-full relative" style={{ background: `linear-gradient(to right, ${viewingOrg.primary_color}, ${viewingOrg.secondary_color})` }}>
                             <button onClick={() => setViewingOrg(null)} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white"><X size={20} /></button>
-                            <div className="absolute -bottom-8 left-8 h-16 w-16 rounded-xl bg-premium-surface border-4 border-premium-surface flex items-center justify-center p-2 shadow-xl">
+                            <div className="absolute -bottom-8 left-8 h-16 w-16 rounded-xl bg-white border-4 border-premium-border/10 flex items-center justify-center p-1 shadow-xl overflow-hidden">
                                 {viewingOrg.logo_url ? <img src={viewingOrg.logo_url} className="h-full w-full object-contain" /> : <Building2 size={24} className="text-premium-secondary" />}
                             </div>
                         </div>

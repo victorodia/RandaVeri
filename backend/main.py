@@ -1733,7 +1733,7 @@ def create_organisation(
             # Use the new image processing utility
             logo.file.seek(0)
             if process_logo(logo.file, file_location):
-                logo_url = f"{BACKEND_URL}/uploads/{safe_name}?t={int(time.time())}"
+                logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
             else:
                  # Fallback if processing fails (optional, could also re-raise)
                  print(f"Logo processing failed for {slug}")
@@ -1864,7 +1864,7 @@ def update_org_branding(
             
             logo.file.seek(0)
             if process_logo(logo.file, file_location):
-                org.logo_url = f"{BACKEND_URL}/uploads/{safe_name}?t={int(time.time())}"
+                org.logo_url = f"{BACKEND_URL}/uploads/{safe_name}?v={int(time.time())}"
             else:
                 raise HTTPException(status_code=500, detail="Logo processing failed")
         except Exception as e:
@@ -1920,8 +1920,9 @@ def update_organisation(
             safe_name = f"logo_{org.slug}.{file_extension}"
             file_location = os.path.join(UPLOAD_DIR, safe_name)
             
+            logo.file.seek(0)
             if process_logo(logo.file, file_location):
-                org.logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
+                org.logo_url = f"{BACKEND_URL}/uploads/{safe_name}?v={int(time.time())}"
             else:
                 print(f"Logo processing failed for {org.slug}")
         except Exception as e:

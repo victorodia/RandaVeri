@@ -641,7 +641,7 @@ const Dashboard = () => {
                         <div className="flex items-center justify-between mb-10 overflow-hidden">
                             <div className="flex items-center gap-3">
                                 {branding.logoUrl ? (
-                                    <div className="h-10 w-10 flex-shrink-0 bg-premium-primary/10 rounded-xl overflow-hidden flex items-center justify-center border border-premium-primary/20">
+                                    <div className="h-10 w-10 flex-shrink-0 bg-white rounded-xl overflow-hidden flex items-center justify-center border border-premium-border/30 shadow-sm">
                                         <img
                                             src={branding.logoUrl}
                                             alt={branding.name}
