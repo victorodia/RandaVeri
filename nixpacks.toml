@@ -1,8 +1,8 @@
 [phases.setup]
-nixPkgs = ["python311", "libjpeg", "zlib", "libpng", "libwebp"]
+nixPkgs = ["python3", "libjpeg", "zlib", "libpng", "libwebp", "gcc"]
 
 [phases.build]
 cmds = ["python3 -m pip install -r backend/requirements.txt"]
 
 [start]
-cmd = "cd backend && python3 -m gunicorn main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT"
+cmd = "bash start.sh"
