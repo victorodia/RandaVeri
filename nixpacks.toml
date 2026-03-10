@@ -1,7 +1,12 @@
-[phases.setup]
-nixPkgs = ["python3", "libjpeg", "zlib", "libpng", "libwebp", "gcc"]
+[providers.python]
 
-[phases.build]
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.11"
+
+[phases.setup]
+nixPkgs = ["python311", "libjpeg", "zlib", "libpng", "libwebp", "gcc"]
+
+[phases.install]
 cmds = ["python3 -m pip install -r backend/requirements.txt"]
 
 [start]
