@@ -1412,24 +1412,26 @@ const Dashboard = () => {
 
                                             <div className="mt-6 w-full px-6 space-y-3 pt-6 border-t border-premium-border/40">
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-premium-secondary uppercase font-bold">Status</span>
-                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${isSubscriptionActive && !isExpired
-                                                        ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20'
-                                                        : 'bg-status-red/10 text-status-red border-status-red/20 animate-pulse'
+                                                    <span className="text-[10px] text-premium-secondary uppercase font-bold">Subscription Status</span>
+                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border shadow-sm ${isExpired
+                                                        ? 'bg-status-red/10 text-status-red border-status-red/20 animate-pulse'
+                                                        : (isSubscriptionActive
+                                                            ? 'bg-status-emerald/10 text-status-emerald border-status-emerald/20'
+                                                            : 'bg-premium-secondary/10 text-premium-secondary border-premium-secondary/20')
                                                         }`}>
-                                                        {isExpired ? 'Expired' : (isSubscriptionActive ? 'Active' : 'Inactive')}
+                                                        {isExpired ? '● Expired' : (isSubscriptionActive ? '● Active' : '○ Inactive')}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-[10px]">
-                                                    <span className="text-premium-secondary uppercase font-bold">Subscribed</span>
+                                                    <span className="text-premium-secondary uppercase font-bold">Date Subscribed</span>
                                                     <span className="font-mono text-premium-text">
-                                                        {user?.organisation?.subscription_date ? new Date(user.organisation.subscription_date).toLocaleDateString() : 'N/A'}
+                                                        {user?.organisation?.subscription_date ? new Date(user.organisation.subscription_date).toLocaleDateString('en-GB') : 'N/A'}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-[10px]">
-                                                    <span className="text-premium-secondary uppercase font-bold">Expires</span>
-                                                    <span className="font-mono text-premium-text">
-                                                        {user?.organisation?.subscription_expiry ? new Date(user.organisation.subscription_expiry).toLocaleDateString() : 'N/A'}
+                                                    <span className="text-premium-secondary uppercase font-bold">License Expires</span>
+                                                    <span className={`font-mono ${isExpired ? 'text-status-red font-bold' : 'text-premium-text'}`}>
+                                                        {user?.organisation?.subscription_expiry ? new Date(user.organisation.subscription_expiry).toLocaleDateString('en-GB') : 'N/A'}
                                                     </span>
                                                 </div>
                                             </div>
