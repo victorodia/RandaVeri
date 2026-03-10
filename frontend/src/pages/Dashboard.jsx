@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
     Wallet, Activity, Search, LogOut, LayoutDashboard, History,
-    FileText, Palette, Shield, Users, CreditCard,
+    FileText, Palette, Shield, Users, CreditCard, Calendar,
     CheckCircle, XCircle, Lock, Zap, ArrowUpCircle, TrendingUp, TrendingDown, Filter, Plus,
     Printer, Download, Edit2, ChevronDown, ChevronUp, Menu as MenuIcon, X as CloseIcon, Upload
 } from 'lucide-react';
