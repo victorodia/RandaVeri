@@ -2705,6 +2705,47 @@ def topup_wallet(
         "price_paid": total_price
     }
 
+@app.post("/wipe-data")
+def wipe_data(db: Session = Depends(get_db)):
+    """
+    TEMPORARY: Clears all data except platform admin credentials.
+    Use with caution. This is intended for environment resets.
+    """
+    try:
+        # 1. Identify platform admins to preserve (no org_id, has admin role)
+        admin_users = db.query(User).filter(
+            (User.role.like("%admin%")), 
+            (User.organisation_id == None)
+        ).all()
+        admin_ids = [u.id for u in admin_users]
+        
+        # 2. Clear dependent tables
+        db.query(Transaction).delete()
+        db.query(Wallet).delete()
+        db.query(ActivityLog).delete()
+        db.query(PasswordResetToken).delete()
+        db.query(EmailVerificationToken).delete()
+        db.query(RevokedToken).delete()
+        db.query(AdminRole).delete()
+        
+        # 3. Clear organisations and non-admin users
+        db.query(User).filter(~User.id.in_(admin_ids)).delete(synchronize_session=False)
+        db.query(Organisation).delete()
+        
+        db.commit()
+        
+        # 4. Clear uploads
+        for filename in os.listdir(UPLOAD_DIR):
+            file_path = os.path.join(UPLOAD_DIR, filename)
+            try:
+                if os.path.isfile(file_path): os.unlink(file_path)
+            except: pass
+            
+        return {"message": "All data cleared except platform administrators."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 bootstrap_orgs()
 
 if __name__ == "__main__":
