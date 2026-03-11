@@ -401,7 +401,7 @@ def login(
         import traceback
         print(f"LOGIN ERROR: {str(e)}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail="An internal server error occurred. Please try again later.")
+        raise HTTPException(status_code=500, detail=f"INTERNAL ERROR: {str(e)}")
 
 @app.post("/logout")
 def logout_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
