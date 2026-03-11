@@ -198,27 +198,22 @@ def seed_system_roles():
     """Ensure built-in system roles (Super Admin) always exist in the DB."""
     db: Session = next(get_db())
     try:
-        # --- Inline DB migration: add is_system column if it doesn't exist yet ---
-        db.execute(text(
-            "ALTER TABLE admin_roles ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT FALSE"
-        ))
+        # --- Inline DB migration locks/checks ---
+        db.execute(text("ALTER TABLE admin_roles ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT FALSE"))
+        db.execute(text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS subscription_price FLOAT"))
         db.commit()
-        print("[STARTUP] DB migration: is_system column ensured on admin_roles")
-        # --- Inline DB migration: add subscription_price to system_configs ---
-        db.execute(text(
-            "ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS subscription_price FLOAT"
-        ))
-        db.commit()
-        print("[STARTUP] DB migration: subscription_price column ensured on system_configs")
-        # -------------------------------------------------------------------------
+
+        # Dynamically identify the platform organisation ID via its slug
+        platform_org = db.query(Organisation).filter(Organisation.slug == "default").first()
+        platform_id = platform_org.id if platform_org else 1 # Fallback to 1 if not bootstraped yet
 
         all_perm_keys = [p["key"] for p in ALL_PERMISSIONS]
         existing = db.query(AdminRole).filter(
             AdminRole.name == "Super Admin",
-            AdminRole.organisation_id == PLATFORM_ORG_ID
+            AdminRole.organisation_id == platform_id
         ).first()
+        
         if existing:
-            # Keep is_system flag set and permissions up-to-date
             changed = False
             if not existing.is_system:
                 existing.is_system = True
@@ -228,19 +223,17 @@ def seed_system_roles():
                 changed = True
             if changed:
                 db.commit()
-                print("[STARTUP] Super Admin role updated")
-            else:
-                print("[STARTUP] Super Admin role already up-to-date")
+                print(f"[STARTUP] Super Admin role updated for Org ID {platform_id}")
         else:
             super_admin = AdminRole(
                 name="Super Admin",
                 permissions=all_perm_keys,
-                organisation_id=PLATFORM_ORG_ID,
+                organisation_id=platform_id,
                 is_system=True
             )
             db.add(super_admin)
             db.commit()
-            print("[STARTUP] Super Admin role seeded successfully")
+            print(f"[STARTUP] Super Admin role seeded for Org ID {platform_id}")
     except Exception as e:
         print(f"[STARTUP] Error seeding Super Admin role: {e}")
     finally:
@@ -606,9 +599,9 @@ def get_me(user: User = Depends(get_current_user)):
     else:
         effective_perms = all_user_perms & platform_keys
 
-    # A user is a platform user if they belong to the platform owner organisation (ID 1) 
+    # A user is a platform user if they belong to the platform owner organisation (slug 'default')
     # AND (are super-admin, or hold a system role, or have at least one assigned platform key)
-    is_platform_user = (user.organisation_id == PLATFORM_ORG_ID) and (
+    is_platform_user = (user.org and user.org.slug == 'default') and (
         is_super_admin or 
         is_system_role or
         bool(all_user_perms & platform_keys)
@@ -1106,14 +1099,14 @@ def get_current_platform_user(token: str = Depends(oauth2_scheme), db: Session =
     """
     user = get_current_user(token, db)
     
-    # ONLY users belonging to the platform owner organisation (ID 1) can access the admin portal.
-    if user.organisation_id != PLATFORM_ORG_ID:
+    # ONLY users belonging to the platform owner organisation (slug 'default') can access the admin portal.
+    if (not user.org or user.org.slug != 'default') and user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin Portal access restricted to platform administrators")
 
     # Check if user has ANY of the platform permissions defined in ALL_PERMISSIONS
     is_platform_user = any(has_permission(user, p["key"]) for p in ALL_PERMISSIONS)
     
-    if not is_platform_user:
+    if not is_platform_user and user.role != "admin":
         raise HTTPException(status_code=403, detail="Insufficient permissions for Admin Portal access")
     return user
 
@@ -2509,12 +2502,15 @@ def get_admin_stats(admin: User = Depends(get_current_platform_user), db: Sessio
     from sqlalchemy import func
     
     user_count_query = db.query(User).join(Organisation)
-    # Always exclude users from deleted organisations (mirrors list_users logic)
     user_count_query = user_count_query.filter(Organisation.is_deleted == False)
-    if admin.organisation_id == PLATFORM_ORG_ID:
-        # Sync with list_users refined logic
+    
+    # Platform Admin sees everything, Org Admin sees their own
+    is_platform = (admin.org and admin.org.slug == 'default')
+    
+    if is_platform:
+        # Platform view defaults to showing platform users + all org admins
         user_count_query = user_count_query.filter(
-            (User.organisation_id == PLATFORM_ORG_ID) | 
+            (Organisation.slug == 'default') | 
             (User.role.like("%org_admin%"))
         )
     else:
