@@ -2709,6 +2709,7 @@ def topup_wallet(
 def debug_db(db: Session = Depends(get_db)):
     """ Returns counts of records in key tables for debugging. """
     return {
+        "v": 2,
         "organisations": db.query(Organisation).count(),
         "users": db.query(User).count(),
         "wallets": db.query(Wallet).count(),
@@ -2723,30 +2724,38 @@ def debug_db(db: Session = Depends(get_db)):
 def wipe_data(db: Session = Depends(get_db)):
     """
     TEMPORARY: Clears all data except platform admin credentials.
-    Improved preservation logic for platform admins.
+    Fixed ForeignKey issues by detaching admins first.
     """
     try:
         # 1. Identify platform admins to preserve (role is 'admin')
         admin_users = db.query(User).filter(User.role == "admin").all()
         admin_ids = [u.id for u in admin_users]
-        print(f"PRESERVING ADMINS: {[u.username for u in admin_users]}")
         
-        # 2. Clear dependent tables
+        # 2. Detach admins from orgs and roles to avoid FK issues during deletion
+        for admin in admin_users:
+            admin.organisation_id = None
+            admin.role_id = None
+        db.commit()
+        
+        # 3. Clear dependent/child tables first
         db.query(Transaction).delete()
         db.query(Wallet).delete()
         db.query(ActivityLog).delete()
         db.query(PasswordResetToken).delete()
         db.query(EmailVerificationToken).delete()
         db.query(RevokedToken).delete()
+        
+        # 4. Clear User and AdminRole tables
+        # Delete non-preserved users
+        db.query(User).filter(~User.id.in_(admin_ids)).delete(synchronize_session=False)
         db.query(AdminRole).delete()
         
-        # 3. Clear non-admin users and ALL organisations
-        db.query(User).filter(~User.id.in_(admin_ids)).delete(synchronize_session=False)
+        # 5. Clear Organisation table
         db.query(Organisation).delete()
         
         db.commit()
         
-        # 4. Clear uploads
+        # 6. Clear uploads
         import os
         for filename in os.listdir(UPLOAD_DIR):
             file_path = os.path.join(UPLOAD_DIR, filename)
@@ -2754,10 +2763,11 @@ def wipe_data(db: Session = Depends(get_db)):
                 if os.path.isfile(file_path): os.unlink(file_path)
             except: pass
         
-        # 5. Re-run bootstrap to ensure system is operational (creates default org and links admin)
+        # 7. Re-run bootstrap to restore system state
+        # Create default org, roles, and re-link the admin
         bootstrap_orgs()
             
-        return {"message": "All data cleared. Platform administrators preserved and system bootstrapped."}
+        return {"message": "Deep cleanup successful. Platform administrators preserved and re-linked."}
     except Exception as e:
         db.rollback()
         import traceback
