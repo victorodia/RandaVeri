@@ -145,11 +145,12 @@ def bootstrap_orgs():
             admin_email = "admin@randaframes.com"
             admin_password = "RandaAdmin@2026" # Default sensitive password
             
+            # Find the "Platform Owner" role for the default org
+            owner_role = db.query(AdminRole).filter(AdminRole.name == "Platform Owner", AdminRole.organisation_id == default_org.id).first()
+            
             existing_admin = db.query(User).filter(func.lower(User.username) == admin_username.lower()).first()
             if not existing_admin:
                 print("INFO: Creating default admin user...")
-                owner_role = db.query(AdminRole).filter(AdminRole.name == "Platform Owner", AdminRole.organisation_id == default_org.id).first()
-                
                 new_admin = User(
                     username=admin_username,
                     email=admin_email,
@@ -164,11 +165,28 @@ def bootstrap_orgs():
                 )
                 db.add(new_admin)
                 db.commit()
+            else:
+                # RE-LINK: Ensure the existing admin is actually connected to the platform org
+                # This fixes the issue where deep wipe detaches them (ID=None) to avoid FK errors
+                changed = False
+                if existing_admin.organisation_id != default_org.id:
+                    existing_admin.organisation_id = default_org.id
+                    changed = True
+                if owner_role and existing_admin.role_id != owner_role.id:
+                    existing_admin.role_id = owner_role.id
+                    changed = True
+                if existing_admin.is_password_change_required:
+                    existing_admin.is_password_change_required = False
+                    changed = True
                 
-                # Create Wallet for Admin Org (if missing)
-                if not default_org.wallet:
-                    default_org.wallet = Wallet(organisation_id=default_org.id, balance_units=1000000)
-                    db.add(default_org.wallet)
+                if changed:
+                    db.commit()
+                    print(f"INFO: Re-linked existing admin to Org ID {default_org.id}")
+                
+            # Create Wallet for Admin Org (if missing)
+            if not default_org.wallet:
+                default_org.wallet = Wallet(organisation_id=default_org.id, balance_units=1000000)
+                db.add(default_org.wallet)
                 db.commit()
 
         db.close()
