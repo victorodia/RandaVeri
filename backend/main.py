@@ -109,8 +109,12 @@ def bootstrap_orgs():
                 default_org.wallet = Wallet(organisation_id=default_org.id, balance_units=0)
                 db.add(default_org.wallet)
                 db.commit()
-        elif not default_org.tier_id:
-            default_org.tier_id = t1.id
+        elif not default_org.tier_id or default_org.primary_color == "#3B82F6":
+            # Migration: Update existing default org to premium blue if still on old default
+            if not default_org.tier_id:
+                default_org.tier_id = t1.id
+            if default_org.primary_color == "#3B82F6":
+                default_org.primary_color = "#2563EB"
             db.commit()
         
         # 3. Bootstrap Roles for Default Organisation
@@ -279,7 +283,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
 # --- Platform Business Logic Constants (override via env vars) ---
 PLATFORM_ORG_ID         = int(os.getenv("PLATFORM_ORG_ID", 1))            # ID of the platform owner organisation
 PLATFORM_NAME           = os.getenv("PLATFORM_NAME", "Randaframes")        # Shown in email subjects and config seed
-DEFAULT_PRIMARY_COLOR   = os.getenv("DEFAULT_PRIMARY_COLOR", "#3B82F6")    # Config seed primary color
+DEFAULT_PRIMARY_COLOR   = os.getenv("DEFAULT_PRIMARY_COLOR", "#2563EB")    # Premium Blue (Blue 600)
 DEFAULT_SECONDARY_COLOR = os.getenv("DEFAULT_SECONDARY_COLOR", "#64748B")  # Config seed secondary color
 PASSWORD_RESET_TTL_HOURS = int(os.getenv("PASSWORD_RESET_TTL_HOURS", 1))   # Password reset token lifetime
 EMAIL_VERIFY_TTL_DAYS   = int(os.getenv("EMAIL_VERIFY_TTL_DAYS", 3))       # Email verification token lifetime

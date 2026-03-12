@@ -5,42 +5,44 @@
     --premium-bg: #0D0F12;
     --premium-surface: #1A1D23;
     --premium-border: #2E343D;
-    --premium-primary: #8B008B;
+    --premium-primary: #3B82F6;
+    /* Switch from Purple to Premium Blue */
     --premium-secondary: #64748B;
-    --premium-accent: #D100D1;
+    --premium-accent: #10B981;
     --premium-text: #FFFFFF;
     --premium-overlay: rgba(255, 255, 255, 0.05);
-    --status-blue: #D100D1;
-    --status-emerald: #E066E0;
+    --status-blue: #3B82F6;
+    --status-emerald: #10B981;
     --status-purple: #D8B4FE;
-    --status-amber: #FCD34D;
-    --status-red: #FCA5A5;
-    --status-orange: #FDBA74;
-    --status-rose: #FDA4AF;
-    --status-indigo: #A5B4FC;
-    --status-teal: #5EEAD4;
-    --status-cyan: #67E8F9;
+    --status-amber: #F59E0B;
+    --status-red: #EF4444;
+    --status-orange: #F97316;
+    --status-rose: #F43F5E;
+    --status-indigo: #6366F1;
+    --status-teal: #14B8A6;
+    --status-cyan: #06B6D4;
   }
 
   :root.light {
-    --premium-bg: #F1F5F9;
+    --premium-bg: #F8FAFC;
     --premium-surface: #FFFFFF;
-    --premium-border: #CBD5E1;
-    --premium-primary: #700070;
+    --premium-border: #E2E8F0;
+    --premium-primary: #1D4ED8;
+    /* Premium Indigo-Blue */
     --premium-secondary: #475569;
-    --premium-accent: #8B008B;
+    --premium-accent: #059669;
     --premium-text: #0F172A;
     --premium-overlay: rgba(15, 23, 42, 0.05);
-    --status-blue: #700070;
-    --status-emerald: #8B008B;
-    --status-purple: #6B21A8;
-    --status-amber: #92400E;
-    --status-red: #991B1B;
-    --status-orange: #9A3412;
-    --status-rose: #9F1239;
-    --status-indigo: #3730A3;
-    --status-teal: #0F766E;
-    --status-cyan: #0E7490;
+    --status-blue: #1D4ED8;
+    --status-emerald: #059669;
+    --status-purple: #7C3AED;
+    --status-amber: #D97706;
+    --status-red: #DC2626;
+    --status-orange: #EA580C;
+    --status-rose: #E11D48;
+    --status-indigo: #4F4665;
+    --status-teal: #0D9488;
+    --status-cyan: #0891B2;
   }
 }
 
