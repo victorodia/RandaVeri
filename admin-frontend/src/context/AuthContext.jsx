@@ -73,6 +73,17 @@ export const AuthProvider = ({ children }) => {
         fetchUser().catch(() => { });
     }, []);
 
+    useEffect(() => {
+        const logoUrl = user?.organisation?.logo_url;
+        if (logoUrl) {
+            const favicon = document.getElementById('favicon');
+            if (favicon) {
+                favicon.href = logoUrl;
+                favicon.type = 'image/png'; // Assuming standard PNG/JPG logos
+            }
+        }
+    }, [user]);
+
     return (
         <AuthContext.Provider value={{ user, login, logout, fetchUser, loading }}>
             {children}
