@@ -74,12 +74,28 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        const logoUrl = user?.organisation?.logo_url;
+        let logoUrl = user?.organisation?.logo_url;
+
+        // Fallback if logo is missing or is a known broken placeholder
+        if (!logoUrl || logoUrl.includes('placeholder')) {
+            logoUrl = '/logo.jpeg';
+        }
+
         if (logoUrl) {
             let favicon = document.getElementById('favicon');
             const newFavicon = document.createElement('link');
             newFavicon.id = 'favicon';
             newFavicon.rel = 'icon';
+
+            // Determine type based on extension
+            if (logoUrl.toLowerCase().includes('.svg')) {
+                newFavicon.type = 'image/svg+xml';
+            } else if (logoUrl.toLowerCase().includes('.png')) {
+                newFavicon.type = 'image/png';
+            } else {
+                newFavicon.type = 'image/jpeg';
+            }
+
             // Add timestamp to bust cache
             newFavicon.href = `${logoUrl}${logoUrl.includes('?') ? '&' : '?'}v=${new Date().getTime()}`;
 

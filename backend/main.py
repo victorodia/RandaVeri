@@ -94,8 +94,8 @@ def bootstrap_orgs():
             default_org = Organisation(
                 name="Randaframes Default",
                 slug="default",
-                logo_url="https://via.placeholder.com/40",
-                primary_color="#3B82F6",
+                logo_url="/logo.jpeg", # Use local fallback
+                primary_color="#2563EB",
                 secondary_color="#64748B",
                 tier_id=t1.id,
                 subscription_price=500000.0
@@ -109,13 +109,21 @@ def bootstrap_orgs():
                 default_org.wallet = Wallet(organisation_id=default_org.id, balance_units=0)
                 db.add(default_org.wallet)
                 db.commit()
-        elif not default_org.tier_id or default_org.primary_color == "#3B82F6":
-            # Migration: Update existing default org to premium blue if still on old default
+        elif not default_org.tier_id or default_org.primary_color == "#3B82F6" or "placeholder" in (default_org.logo_url or ""):
+            # Migration: Update existing default org to premium blue and fix placeholder logo
+            changed = False
             if not default_org.tier_id:
                 default_org.tier_id = t1.id
+                changed = True
             if default_org.primary_color == "#3B82F6":
                 default_org.primary_color = "#2563EB"
-            db.commit()
+                changed = True
+            if not default_org.logo_url or "placeholder" in default_org.logo_url:
+                default_org.logo_url = "/logo.jpeg"
+                changed = True
+            
+            if changed:
+                db.commit()
         
         # 3. Bootstrap Roles for Default Organisation
         default_org = db.query(Organisation).filter(Organisation.slug == "default").first()
