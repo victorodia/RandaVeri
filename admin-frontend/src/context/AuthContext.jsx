@@ -76,6 +76,11 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         let logoUrl = user?.organisation?.logo_url;
 
+        // Handle relative paths by prepending API_BASE_URL
+        if (logoUrl && logoUrl.startsWith('/uploads')) {
+            logoUrl = `${API_BASE_URL}${logoUrl}`;
+        }
+
         // Fallback if logo is missing or is a known broken placeholder
         if (!logoUrl || logoUrl.includes('placeholder')) {
             logoUrl = '/logo.jpeg';

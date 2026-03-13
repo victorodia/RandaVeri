@@ -122,6 +122,15 @@ def bootstrap_orgs():
                 default_org.logo_url = "/logo.jpeg"
                 changed = True
             
+            # Additional migration for relative paths in general
+            all_orgs = db.query(Organisation).all()
+            for o in all_orgs:
+                if o.logo_url and o.logo_url.startswith("http"):
+                    # Extract relative path if it contains /uploads/
+                    if "/uploads/" in o.logo_url:
+                        o.logo_url = "/uploads/" + o.logo_url.split("/uploads/")[1]
+                        changed = True
+
             if changed:
                 db.commit()
         
@@ -1756,7 +1765,7 @@ def create_organisation(
             # Use the new image processing utility
             logo.file.seek(0)
             if process_logo(logo.file, file_location):
-                logo_url = f"{BACKEND_URL}/uploads/{safe_name}"
+                logo_url = f"/uploads/{safe_name}"
             else:
                  # Fallback if processing fails (optional, could also re-raise)
                  print(f"Logo processing failed for {slug}")
@@ -1945,7 +1954,7 @@ def update_organisation(
             
             logo.file.seek(0)
             if process_logo(logo.file, file_location):
-                org.logo_url = f"{BACKEND_URL}/uploads/{safe_name}?v={int(time.time())}"
+                org.logo_url = f"/uploads/{safe_name}?v={int(time.time())}"
             else:
                 print(f"Logo processing failed for {org.slug}")
         except Exception as e:

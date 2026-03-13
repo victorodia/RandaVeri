@@ -23,7 +23,7 @@ export const BrandingProvider = ({ children }) => {
                 logoText: data.name ? data.name[0] : "R",
                 primaryColor: data.primary_color || "#3B82F6",
                 secondaryColor: data.secondary_color || "#64748B",
-                logoUrl: data.logo_url || "",
+                logoUrl: (data.logo_url && data.logo_url.startsWith('/uploads')) ? `${API_BASE_URL}${data.logo_url}` : (data.logo_url || ""),
                 orgSlug: slug
             };
             setBranding(updatedBranding);

@@ -249,7 +249,16 @@ const AdminDashboard = () => {
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         <div className="h-10 w-10 bg-premium-primary/10 rounded-xl overflow-hidden flex items-center justify-center border border-premium-primary/20">
-                            <img src="/logo.jpeg" alt="Logo" className="h-full w-full object-cover" />
+                            <img
+                                src={
+                                    user?.organisation?.logo_url
+                                        ? (user.organisation.logo_url.startsWith('/uploads') ? `${API_BASE_URL}${user.organisation.logo_url}` : user.organisation.logo_url)
+                                        : "/logo.jpeg"
+                                }
+                                alt="Logo"
+                                className="h-full w-full object-cover"
+                                onError={(e) => { e.target.src = "/logo.jpeg"; }}
+                            />
                         </div>
                         <div className="hidden xsm:block">
                             <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate max-w-[150px] sm:max-w-none">
